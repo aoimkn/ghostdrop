@@ -10,6 +10,13 @@
   "main": "./workers/app.ts",
   "observability": { "enabled": true },
   "upload_source_maps": true,
+  "durable_objects": {
+    "bindings": [
+      { "name": "ACCOUNT", "class_name": "Account" },
+      { "name": "CHALLENGE", "class_name": "Challenge" },
+    ],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Account", "Challenge"] }],
   /**
    * Smart Placement
    * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

@@ -71,7 +71,7 @@ Rationale: the WebAuthn PRF extension could derive the key from the passkey itse
 ### Devices
 
 - A device is added to the account when the owner signs in and enters the passphrase on it.
-- Devices have a name, shown when choosing a target and on pending drops. The owner can rename a device and remove it from the account.
+- Devices have a name, shown when choosing a target and on pending drops. The owner can rename a device and remove it from the account. Removing a device signs it out immediately.
 
 ### Account deletion
 
