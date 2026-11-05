@@ -8,3 +8,7 @@
 # Cloudflare
 .wrangler
 worker-configuration.d.ts
+
+# Paraglide
+/app/paraglide/
+/project.inlang/cache/

@@ -8,7 +8,7 @@
     "build": "react-router build",
     "preview": "pnpm run build && vite preview",
     "deploy": "pnpm run build && wrangler deploy",
-    "typegen": "wrangler types && react-router typegen",
+    "typegen": "wrangler types && react-router typegen && paraglide-js compile --project ./project.inlang",
     "lint": "pnpm run typegen && oxlint --type-aware --type-check",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
@@ -24,6 +24,8 @@
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.67.0",
     "@cloudflare/vitest-plugin": "^1.5.1",
+    "@inlang/paraglide-js": "^3.1.0",
+    "@inlang/plugin-message-format": "^4.6.0",
     "@react-router/dev": "^8.5.1",
     "@tailwindcss/vite": "^4.2.2",
     "@types/node": "^26",
