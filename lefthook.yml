@@ -1,0 +1,13 @@
+pre-commit:
+  jobs:
+    - name: format
+      glob: "*.{js,jsx,ts,tsx,json,jsonc,css,md,yml,yaml}"
+      run: pnpm exec oxfmt {staged_files}
+      stage_fixed: true
+    - name: lint
+      run: pnpm lint
+
+pre-push:
+  jobs:
+    - name: test
+      run: pnpm test

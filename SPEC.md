@@ -21,14 +21,14 @@ Anyone can sign up. Each account is private to its owner: drops only travel betw
 
 ## 2. Terminology
 
-| Term | Meaning |
-|---|---|
-| Account | One owner's identity. Nothing crosses accounts. |
-| Device | A browser in which the owner has signed in and unlocked the account with the passphrase. Each device has a name. |
-| Drop | One transfer: one or more items sent together from one device. |
-| Item | A single piece of content within a drop: a MIME type, an optional file name, and bytes. |
-| Pending drop | A drop that has been sent and not yet received, deleted or expired. |
-| Burn | Irreversible deletion of a drop from the server. |
+| Term         | Meaning                                                                                                          |
+| ------------ | ---------------------------------------------------------------------------------------------------------------- |
+| Account      | One owner's identity. Nothing crosses accounts.                                                                  |
+| Device       | A browser in which the owner has signed in and unlocked the account with the passphrase. Each device has a name. |
+| Drop         | One transfer: one or more items sent together from one device.                                                   |
+| Item         | A single piece of content within a drop: a MIME type, an optional file name, and bytes.                          |
+| Pending drop | A drop that has been sent and not yet received, deleted or expired.                                              |
+| Burn         | Irreversible deletion of a drop from the server.                                                                 |
 
 ## 3. Security
 
@@ -128,9 +128,9 @@ Rationale: these three are the only types the Clipboard API requires browsers to
 
 ## 7. Limits
 
-| Limit | Value |
-|---|---|
-| Expiry period | TBD |
-| Maximum drop size | 100 MB |
-| Maximum pending drops per account | TBD |
-| Session lifetime | TBD |
+| Limit                             | Value  |
+| --------------------------------- | ------ |
+| Expiry period                     | TBD    |
+| Maximum drop size                 | 100 MB |
+| Maximum pending drops per account | TBD    |
+| Session lifetime                  | TBD    |

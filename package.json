@@ -1,0 +1,42 @@
+{
+  "name": "ghostdrop",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "react-router dev",
+    "build": "react-router build",
+    "preview": "pnpm run build && vite preview",
+    "deploy": "pnpm run build && wrangler deploy",
+    "typegen": "wrangler types && react-router typegen",
+    "lint": "pnpm run typegen && oxlint --type-aware --type-check",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check",
+    "test": "vitest run",
+    "postinstall": "wrangler types"
+  },
+  "dependencies": {
+    "isbot": "^5.1.36",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router": "^8.5.1"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.67.0",
+    "@cloudflare/vitest-plugin": "^1.5.1",
+    "@react-router/dev": "^8.5.1",
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/node": "^22",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "lefthook": "^2.2.2",
+    "oxfmt": "^0.76.0",
+    "oxlint": "^1.91.0",
+    "oxlint-tsgolint": "^7.0.2005",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.0.3",
+    "vitest": "^5.1.0",
+    "wrangler": "^4.157.0"
+  }
+}
