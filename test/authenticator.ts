@@ -6,6 +6,8 @@ import type {
 } from "@simplewebauthn/server";
 import { isoBase64URL, isoCBOR } from "@simplewebauthn/server/helpers";
 
+type CBOR = Parameters<typeof isoCBOR.encode>[0];
+
 type Credential = { id: string; keyPair: CryptoKeyPair; userHandle: string; rpId: string };
 
 type Options = { origin?: string; userVerified?: boolean };
@@ -19,22 +21,25 @@ export class SoftwareAuthenticator {
     options: PublicKeyCredentialCreationOptionsJSON,
     { origin = this.origin, userVerified = true }: Options = {},
   ): Promise<RegistrationResponseJSON> {
-    const keyPair = (await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, [
+    const keyPair = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, [
       "sign",
       "verify",
-    ])) as CryptoKeyPair;
+    ]);
+    const rpId = options.rp.id;
+    if (rpId === undefined) throw new Error("rp.id is required");
     const rawId = crypto.getRandomValues(new Uint8Array(16));
     const id = isoBase64URL.fromBuffer(rawId);
-    this.credentials.push({ id, keyPair, userHandle: options.user.id, rpId: options.rp.id! });
+    this.credentials.push({ id, keyPair, userHandle: options.user.id, rpId });
 
-    const jwk = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
+    const { x, y } = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
+    if (x === undefined || y === undefined) throw new Error("not an EC public key");
     const coseKey = isoCBOR.encode(
       new Map<number, number | Uint8Array>([
         [1, 2],
         [3, -7],
         [-1, 1],
-        [-2, isoBase64URL.toBuffer(jwk.x!)],
-        [-3, isoBase64URL.toBuffer(jwk.y!)],
+        [-2, isoBase64URL.toBuffer(x)],
+        [-3, isoBase64URL.toBuffer(y)],
       ]),
     );
     const attestedCredentialData = concat(
@@ -44,15 +49,15 @@ export class SoftwareAuthenticator {
       coseKey,
     );
     const authData = concat(
-      await authenticatorData(options.rp.id!, flags(userVerified) | 0x40),
+      await authenticatorData(rpId, flags(userVerified) | 0x40),
       attestedCredentialData,
     );
     const attestationObject = isoCBOR.encode(
-      new Map<string, unknown>([
+      new Map<string, CBOR>([
         ["fmt", "none"],
         ["attStmt", new Map()],
         ["authData", authData],
-      ]) as Parameters<typeof isoCBOR.encode>[0],
+      ]),
     );
     return {
       id,
@@ -130,7 +135,7 @@ function derSignature(raw: Uint8Array): Uint8Array<ArrayBuffer> {
     let start = 0;
     while (start < bytes.length - 1 && bytes[start] === 0) start++;
     const trimmed = bytes.slice(start);
-    const value = trimmed[0]! & 0x80 ? concat(new Uint8Array([0]), trimmed) : trimmed;
+    const value = ((trimmed[0] ?? 0) & 0x80) !== 0 ? concat(new Uint8Array([0]), trimmed) : trimmed;
     return concat(new Uint8Array([0x02, value.length]), value);
   };
   const body = concat(integer(raw.slice(0, 32)), integer(raw.slice(32)));

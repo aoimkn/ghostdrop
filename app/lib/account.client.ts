@@ -3,8 +3,31 @@ import type {
   PublicKeyCredentialCreationOptionsJSON,
   PublicKeyCredentialRequestOptionsJSON,
 } from "@simplewebauthn/browser";
+import { z } from "zod";
 
-export type Passkey = { id: string; aaguid: string; createdAt: number; lastUsedAt: number | null };
+const creationOptions = z.looseObject({
+  rp: z.looseObject({ name: z.string(), id: z.string().optional() }),
+  user: z.looseObject({ id: z.string(), name: z.string(), displayName: z.string() }),
+  challenge: z.string(),
+  pubKeyCredParams: z.array(z.looseObject({ alg: z.number(), type: z.literal("public-key") })),
+}) satisfies z.ZodType<PublicKeyCredentialCreationOptionsJSON>;
+
+const requestOptions = z.looseObject({
+  challenge: z.string(),
+}) satisfies z.ZodType<PublicKeyCredentialRequestOptionsJSON>;
+
+const session = z.object({ accountId: z.string() });
+
+const passkey = z.object({
+  id: z.string(),
+  aaguid: z.string(),
+  createdAt: z.number(),
+  lastUsedAt: z.number().nullable(),
+});
+
+const apiError = z.object({ error: z.string() });
+
+export type Passkey = z.infer<typeof passkey>;
 
 export class ApiError extends Error {
   constructor(
@@ -16,28 +39,22 @@ export class ApiError extends Error {
 }
 
 export async function signUp(): Promise<void> {
-  const optionsJSON = await api<PublicKeyCredentialCreationOptionsJSON>(
-    "POST",
-    "/api/sign-up/options",
-  );
-  await api("POST", "/api/sign-up", await startRegistration({ optionsJSON }));
+  const optionsJSON = creationOptions.parse(await call("POST", "/api/sign-up/options"));
+  await call("POST", "/api/sign-up", await startRegistration({ optionsJSON }));
 }
 
 export async function signIn(): Promise<void> {
-  const optionsJSON = await api<PublicKeyCredentialRequestOptionsJSON>(
-    "POST",
-    "/api/sign-in/options",
-  );
-  await api("POST", "/api/sign-in", await startAuthentication({ optionsJSON }));
+  const optionsJSON = requestOptions.parse(await call("POST", "/api/sign-in/options"));
+  await call("POST", "/api/sign-in", await startAuthentication({ optionsJSON }));
 }
 
 export async function signOut(): Promise<void> {
-  await api("POST", "/api/sign-out");
+  await call("POST", "/api/sign-out");
 }
 
-export async function getSession(): Promise<{ accountId: string } | null> {
+export async function getSession(): Promise<z.infer<typeof session> | null> {
   try {
-    return await api<{ accountId: string }>("GET", "/api/session");
+    return session.parse(await call("GET", "/api/session"));
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) return null;
     throw error;
@@ -45,32 +62,27 @@ export async function getSession(): Promise<{ accountId: string } | null> {
 }
 
 export async function listPasskeys(): Promise<Passkey[]> {
-  return api<Passkey[]>("GET", "/api/passkeys");
+  return z.array(passkey).parse(await call("GET", "/api/passkeys"));
 }
 
 export async function addPasskey(): Promise<void> {
-  const optionsJSON = await api<PublicKeyCredentialCreationOptionsJSON>(
-    "POST",
-    "/api/passkeys/options",
-  );
-  await api("POST", "/api/passkeys", await startRegistration({ optionsJSON }));
+  const optionsJSON = creationOptions.parse(await call("POST", "/api/passkeys/options"));
+  await call("POST", "/api/passkeys", await startRegistration({ optionsJSON }));
 }
 
 export async function removePasskey(id: string): Promise<void> {
-  await api("DELETE", `/api/passkeys/${encodeURIComponent(id)}`);
+  await call("DELETE", `/api/passkeys/${encodeURIComponent(id)}`);
 }
 
-async function api<T = void>(method: string, path: string, body?: unknown): Promise<T> {
+async function call(method: string, path: string, body?: unknown): Promise<unknown> {
   const response = await fetch(path, {
     method,
     headers: body === undefined ? {} : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!response.ok) {
-    const { error } = (await response.json().catch(() => ({ error: "unknown" }))) as {
-      error: string;
-    };
-    throw new ApiError(response.status, error);
+    const parsed = apiError.safeParse(await response.json().catch(() => null));
+    throw new ApiError(response.status, parsed.success ? parsed.data.error : "unknown");
   }
-  return (response.status === 204 ? undefined : await response.json()) as T;
+  return response.status === 204 ? undefined : response.json();
 }

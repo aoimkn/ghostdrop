@@ -16,15 +16,15 @@ export class Client {
       headers: {
         ...(method === "GET" ? {} : { Origin: ORIGIN }),
         ...(body === undefined ? {} : { "Content-Type": "application/json" }),
-        ...(this.cookie ? { Cookie: this.cookie } : {}),
+        ...(this.cookie === null ? {} : { Cookie: this.cookie }),
         ...headers,
       },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     const setCookie = response.headers.get("Set-Cookie");
-    if (setCookie) {
-      const [pair] = setCookie.split(";");
-      this.cookie = pair!.endsWith("=") ? null : pair!;
+    if (setCookie !== null) {
+      const [pair = ""] = setCookie.split(";");
+      this.cookie = pair.endsWith("=") ? null : pair;
     }
     return response;
   }

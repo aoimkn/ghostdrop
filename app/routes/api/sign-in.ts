@@ -14,7 +14,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   const redeemed = await redeemChallenge(env, response);
   if (redeemed?.purpose.kind !== "sign-in") return error(400, "invalid-challenge");
   const userHandle = response.response.userHandle;
-  if (!userHandle || isoBase64URL.toBuffer(userHandle).length !== 16) {
+  if (userHandle === undefined || isoBase64URL.toBuffer(userHandle).length !== 16) {
     return error(400, "verification-failed");
   }
   const accountId = isoBase64URL.fromBuffer(isoBase64URL.toBuffer(userHandle));
@@ -35,7 +35,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     },
     requireUserVerification: true,
   }).catch(() => null);
-  if (!verification?.verified) return error(400, "verification-failed");
+  if (verification?.verified !== true) return error(400, "verification-failed");
   await stub.recordPasskeyUse(passkey.id, verification.authenticationInfo.newCounter);
   return new Response(null, {
     status: 204,

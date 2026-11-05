@@ -30,7 +30,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     expectedRPID: rp.id,
     requireUserVerification: true,
   }).catch(() => null);
-  if (!verification?.verified) return error(400, "verification-failed");
+  if (verification?.verified !== true) return error(400, "verification-failed");
   const { credential, aaguid } = verification.registrationInfo;
   const added = await account(env, accountId).addPasskey({
     id: credential.id,

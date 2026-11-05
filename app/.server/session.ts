@@ -29,9 +29,10 @@ export function clearedSessionCookie(): string {
 export const requireSession: MiddlewareFunction<Response> = async ({ request, context }, next) => {
   const { env } = context.get(cloudflareContext);
   const value = readCookie(request, COOKIE_NAME);
-  const match = value ? COOKIE_VALUE.exec(value) : null;
-  if (!match) throw error(401, "unauthenticated");
-  const [, accountId, token] = match;
+  const [, accountId, token] = COOKIE_VALUE.exec(value ?? "") ?? [];
+  if (value === null || accountId === undefined || token === undefined) {
+    throw error(401, "unauthenticated");
+  }
   const tokenHash = await hash(token);
   if (!(await account(env, accountId).extendSession(tokenHash, Date.now() + LIFETIME_MS))) {
     throw error(401, "unauthenticated");
@@ -39,7 +40,7 @@ export const requireSession: MiddlewareFunction<Response> = async ({ request, co
   context.set(sessionContext, { accountId, tokenHash });
   const response = await next();
   if (!response.headers.has("Set-Cookie")) {
-    response.headers.append("Set-Cookie", sessionCookie(value!, LIFETIME_MS / 1000));
+    response.headers.append("Set-Cookie", sessionCookie(value, LIFETIME_MS / 1000));
   }
   return response;
 };

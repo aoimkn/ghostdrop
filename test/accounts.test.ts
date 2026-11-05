@@ -2,8 +2,9 @@ import type {
   PublicKeyCredentialCreationOptionsJSON,
   PublicKeyCredentialRequestOptionsJSON,
 } from "@simplewebauthn/server";
-import { env, runInDurableObject } from "cloudflare:test";
-import { describe, expect, it } from "vitest";
+import { runInDurableObject } from "cloudflare:test";
+import { env } from "cloudflare:workers";
+import { assert, describe, expect, it } from "vitest";
 
 import { SoftwareAuthenticator } from "./authenticator";
 import { Client, ORIGIN } from "./client";
@@ -150,7 +151,8 @@ describe("sign-in", () => {
   it("rejects a passkey presented for another account", async () => {
     const first = await signUp();
     const second = await signUp();
-    const credential = first.authenticator.credentials[0]!;
+    const [credential] = first.authenticator.credentials;
+    assert(credential !== undefined);
     credential.userHandle = second.accountId;
     const { response } = await signIn(first.authenticator);
     expect(response.status).toBe(400);
@@ -241,9 +243,9 @@ describe("passkeys", () => {
       "POST",
       "/api/passkeys/options",
     );
-    expect(options.excludeCredentials?.map(({ id }) => id)).toEqual([
-      authenticator.credentials[0]!.id,
-    ]);
+    expect(options.excludeCredentials?.map(({ id }) => id)).toEqual(
+      authenticator.credentials.map(({ id }) => id),
+    );
   });
 
   it("rejects a challenge issued to another account", async () => {
@@ -262,10 +264,12 @@ describe("passkeys", () => {
     const second = new SoftwareAuthenticator(ORIGIN);
     await addPasskey(client, second);
     const [first] = await client.json<Passkey[]>("GET", "/api/passkeys");
-    expect((await client.request("DELETE", `/api/passkeys/${first!.id}`)).status).toBe(204);
+    assert(first !== undefined);
+    expect((await client.request("DELETE", `/api/passkeys/${first.id}`)).status).toBe(204);
     expect((await signIn(authenticator)).response.status).toBe(400);
     const [remaining] = await client.json<Passkey[]>("GET", "/api/passkeys");
-    expect((await client.request("DELETE", `/api/passkeys/${remaining!.id}`)).status).toBe(409);
+    assert(remaining !== undefined);
+    expect((await client.request("DELETE", `/api/passkeys/${remaining.id}`)).status).toBe(409);
     expect((await client.request("DELETE", "/api/passkeys/unknown")).status).toBe(404);
   });
 

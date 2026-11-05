@@ -1,4 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
+import { z } from "zod";
 
 export type NewPasskey = {
   id: string;
@@ -67,7 +68,7 @@ export class Account extends DurableObject<Env> {
       id: row.id,
       publicKey: new Uint8Array(row.public_key),
       counter: row.counter,
-      transports: JSON.parse(row.transports) as string[],
+      transports: z.array(z.string()).parse(JSON.parse(row.transports)),
       aaguid: row.aaguid,
       createdAt: row.created_at,
       lastUsedAt: row.last_used_at,

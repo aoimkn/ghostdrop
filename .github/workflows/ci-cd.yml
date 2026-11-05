@@ -18,7 +18,7 @@ jobs:
           version: latest
           runtime: node
           cache: true
-      - run: pnpm fmt:check
+      - run: pnpm fmt --check
       - run: pnpm lint
       - run: pnpm test
       - run: pnpm build

@@ -1,7 +1,43 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "unicorn", "oxc"],
-  "categories": { "correctness": "error" },
-  "rules": {},
-  "env": { "builtin": true }
+  "plugins": ["typescript", "unicorn", "oxc", "import", "react", "jsx-a11y", "vitest", "promise"],
+  "categories": { "correctness": "error", "suspicious": "error" },
+  "options": { "typeAware": true, "typeCheck": true, "denyWarnings": true },
+  "env": { "builtin": true },
+  "rules": {
+    "react/react-in-jsx-scope": "off",
+    "import/no-unassigned-import": ["error", { "allow": ["**/*.css"] }],
+
+    "typescript/no-explicit-any": "error",
+    "typescript/ban-ts-comment": "error",
+    "typescript/no-non-null-assertion": "error",
+
+    "typescript/no-deprecated": "error",
+    "typescript/no-misused-promises": "error",
+    "typescript/switch-exhaustiveness-check": "error",
+    "typescript/strict-boolean-expressions": "error",
+
+    "react/rules-of-hooks": "error",
+    "react/unsupported-syntax": "error",
+
+    "no-restricted-globals": [
+      "error",
+      "name",
+      "origin",
+      "status",
+      "event",
+      "length",
+      "parent",
+      "top",
+      "self",
+      "close",
+      "open",
+      "closed",
+      "opener",
+      "frames",
+      "location",
+      "history",
+      "screen"
+    ]
+  }
 }
