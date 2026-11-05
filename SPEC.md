@@ -126,11 +126,17 @@ Every item is carried as-is: original MIME type and bytes, no conversion.
 
 Rationale: these three are the only types the Clipboard API requires browsers to support for writing. Others (e.g. `image/jpeg`) are rejected by some browsers, so they are not offered as clipboard targets.
 
-## 7. Limits
+## 7. Language
 
-| Limit                             | Value  |
-| --------------------------------- | ------ |
-| Expiry period                     | TBD    |
-| Maximum drop size                 | 100 MB |
-| Maximum pending drops per account | TBD    |
-| Session lifetime                  | TBD    |
+- The interface is available in Japanese and English.
+- On first visit, the language follows the browser's preference, falling back to English.
+- The owner can switch the language. The choice is remembered on that device.
+
+## 8. Limits
+
+| Limit                             | Value                         |
+| --------------------------------- | ----------------------------- |
+| Expiry period                     | TBD                           |
+| Maximum drop size                 | 100 MB                        |
+| Maximum pending drops per account | TBD                           |
+| Session lifetime                  | 30 days, extended on each use |
