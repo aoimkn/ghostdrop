@@ -16,10 +16,14 @@ export function account(env: Env, accountId: string) {
   return env.ACCOUNT.get(env.ACCOUNT.idFromName(accountId));
 }
 
-export async function startSession(env: Env, accountId: string): Promise<string> {
+export async function startSession(
+  env: Env,
+  accountId: string,
+): Promise<{ cookie: string; tokenHash: string }> {
   const token = isoBase64URL.fromBuffer(crypto.getRandomValues(new Uint8Array(32)));
-  await account(env, accountId).createSession(await hash(token), Date.now() + LIFETIME_MS);
-  return sessionCookie(`${accountId}.${token}`, LIFETIME_MS / 1000);
+  const tokenHash = await hash(token);
+  await account(env, accountId).createSession(tokenHash, Date.now() + LIFETIME_MS);
+  return { cookie: sessionCookie(`${accountId}.${token}`, LIFETIME_MS / 1000), tokenHash };
 }
 
 export function clearedSessionCookie(): string {

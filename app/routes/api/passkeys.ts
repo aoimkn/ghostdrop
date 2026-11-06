@@ -1,11 +1,20 @@
 import { verifyRegistrationResponse } from "@simplewebauthn/server";
+import { z } from "zod";
 
 import { cloudflareContext } from "~/.server/context";
 import { error, readJson } from "~/.server/http";
 import { account, sessionContext } from "~/.server/session";
-import { redeemChallenge, registrationResponse, relyingParty } from "~/.server/webauthn";
+import {
+  authenticationResponse,
+  redeemChallenge,
+  registrationResponse,
+  relyingParty,
+  verifyAssertion,
+} from "~/.server/webauthn";
 
 import type { Route } from "./+types/passkeys";
+
+const body = z.object({ confirmation: authenticationResponse, credential: registrationResponse });
 
 export async function loader({ context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
@@ -17,7 +26,14 @@ export async function action({ request, context }: Route.ActionArgs) {
   if (request.method !== "POST") return error(405, "method-not-allowed");
   const { env } = context.get(cloudflareContext);
   const { accountId } = context.get(sessionContext);
-  const response = await readJson(request, registrationResponse);
+  const { confirmation, credential: response } = await readJson(request, body);
+  const confirmed = await redeemChallenge(env, confirmation);
+  if (confirmed?.purpose.kind !== "confirm-passkey" || confirmed.purpose.accountId !== accountId) {
+    return error(400, "invalid-challenge");
+  }
+  if (!(await verifyAssertion(env, request, accountId, confirmation, confirmed.challenge))) {
+    return error(400, "verification-failed");
+  }
   const redeemed = await redeemChallenge(env, response);
   if (redeemed?.purpose.kind !== "add-passkey" || redeemed.purpose.accountId !== accountId) {
     return error(400, "invalid-challenge");

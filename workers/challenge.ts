@@ -3,6 +3,7 @@ import { DurableObject } from "cloudflare:workers";
 export type ChallengePurpose =
   | { kind: "sign-up"; accountId: string }
   | { kind: "sign-in" }
+  | { kind: "confirm-passkey"; accountId: string }
   | { kind: "add-passkey"; accountId: string };
 
 type Stored = { purpose: ChallengePurpose; expiresAt: number };

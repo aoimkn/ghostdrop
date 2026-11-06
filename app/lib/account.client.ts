@@ -1,9 +1,17 @@
-import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
+import {
+  base64URLStringToBuffer,
+  bufferToBase64URLString,
+  startAuthentication,
+  startRegistration,
+} from "@simplewebauthn/browser";
 import type {
   PublicKeyCredentialCreationOptionsJSON,
   PublicKeyCredentialRequestOptionsJSON,
 } from "@simplewebauthn/browser";
 import { z } from "zod";
+
+import { clearKey, loadKey, saveKey } from "./keystore.client";
+import { deriveKey, isLongEnough, newParams, proof } from "./passphrase";
 
 const creationOptions = z.looseObject({
   rp: z.looseObject({ name: z.string(), id: z.string().optional() }),
@@ -16,7 +24,20 @@ const requestOptions = z.looseObject({
   challenge: z.string(),
 }) satisfies z.ZodType<PublicKeyCredentialRequestOptionsJSON>;
 
-const session = z.object({ accountId: z.string() });
+const session = z.object({
+  accountId: z.string(),
+  device: z.object({ id: z.string(), name: z.string(), locked: z.boolean() }).nullable(),
+});
+
+const device = z.object({
+  id: z.string(),
+  name: z.string(),
+  locked: z.boolean(),
+  current: z.boolean(),
+  createdAt: z.number(),
+});
+
+const passphraseParams = z.object({ params: z.string() });
 
 const passkey = z.object({
   id: z.string(),
@@ -29,6 +50,10 @@ const apiError = z.object({ error: z.string() });
 
 export type Passkey = z.infer<typeof passkey>;
 
+export type Device = z.infer<typeof device>;
+
+export type Session = z.infer<typeof session> & { unlocked: boolean };
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -38,9 +63,17 @@ export class ApiError extends Error {
   }
 }
 
-export async function signUp(): Promise<void> {
+export class PassphraseTooShortError extends Error {}
+
+export async function signUp(passphrase: string, deviceName: string): Promise<void> {
+  const { params, key } = await newPassphrase(passphrase);
   const optionsJSON = creationOptions.parse(await call("POST", "/api/sign-up/options"));
-  await call("POST", "/api/sign-up", await startRegistration({ optionsJSON }));
+  await call("POST", "/api/sign-up", {
+    credential: await startRegistration({ optionsJSON }),
+    passphrase: { params: encode(params), proof: encode(await proof(key)) },
+    device: { name: deviceName },
+  });
+  await saveKey(key);
 }
 
 export async function signIn(): Promise<void> {
@@ -50,15 +83,59 @@ export async function signIn(): Promise<void> {
 
 export async function signOut(): Promise<void> {
   await call("POST", "/api/sign-out");
+  await clearKey();
 }
 
-export async function getSession(): Promise<z.infer<typeof session> | null> {
+export async function deleteAccount(): Promise<void> {
+  await call("DELETE", "/api/account");
+  await clearKey();
+}
+
+export async function getSession(): Promise<Session | null> {
+  let current: z.infer<typeof session>;
   try {
-    return session.parse(await call("GET", "/api/session"));
+    current = session.parse(await call("GET", "/api/session"));
   } catch (error) {
-    if (error instanceof ApiError && error.status === 401) return null;
+    if (error instanceof ApiError && error.status === 401) {
+      await clearKey();
+      return null;
+    }
     throw error;
   }
+  const unlocked = current.device !== null && !current.device.locked && (await loadKey()) !== null;
+  return { ...current, unlocked };
+}
+
+export async function addDevice(passphrase: string, name: string): Promise<void> {
+  const key = await existingPassphrase(passphrase);
+  await call("POST", "/api/devices", { name, proof: encode(await proof(key)) });
+  await saveKey(key);
+}
+
+export async function unlockDevice(passphrase: string): Promise<void> {
+  const key = await existingPassphrase(passphrase);
+  await call("POST", "/api/device/unlock", { proof: encode(await proof(key)) });
+  await saveKey(key);
+}
+
+export async function replacePassphrase(passphrase: string): Promise<void> {
+  const { params, key } = await newPassphrase(passphrase);
+  await call("PUT", "/api/passphrase", { params: encode(params), proof: encode(await proof(key)) });
+  await saveKey(key);
+}
+
+export async function listDevices(): Promise<Device[]> {
+  return z.array(device).parse(await call("GET", "/api/devices"));
+}
+
+export async function renameDevice(id: string, name: string): Promise<void> {
+  await call("PATCH", `/api/devices/${encodeURIComponent(id)}`, { name });
+}
+
+export async function removeDevice(id: string): Promise<void> {
+  const current = (await listDevices()).find((candidate) => candidate.current);
+  await call("DELETE", `/api/devices/${encodeURIComponent(id)}`);
+  if (current?.id === id) await clearKey();
 }
 
 export async function listPasskeys(): Promise<Passkey[]> {
@@ -66,12 +143,31 @@ export async function listPasskeys(): Promise<Passkey[]> {
 }
 
 export async function addPasskey(): Promise<void> {
-  const optionsJSON = creationOptions.parse(await call("POST", "/api/passkeys/options"));
-  await call("POST", "/api/passkeys", await startRegistration({ optionsJSON }));
+  const options = z
+    .object({ confirm: requestOptions, create: creationOptions })
+    .parse(await call("POST", "/api/passkeys/options"));
+  const confirmation = await startAuthentication({ optionsJSON: options.confirm });
+  const credential = await startRegistration({ optionsJSON: options.create });
+  await call("POST", "/api/passkeys", { confirmation, credential });
 }
 
 export async function removePasskey(id: string): Promise<void> {
   await call("DELETE", `/api/passkeys/${encodeURIComponent(id)}`);
+}
+
+async function newPassphrase(passphrase: string) {
+  if (!isLongEnough(passphrase)) throw new PassphraseTooShortError();
+  const params = newParams();
+  return { params, key: await deriveKey(passphrase, params) };
+}
+
+async function existingPassphrase(passphrase: string): Promise<CryptoKey> {
+  const { params } = passphraseParams.parse(await call("GET", "/api/passphrase"));
+  return deriveKey(passphrase, new Uint8Array(base64URLStringToBuffer(params)));
+}
+
+function encode(bytes: Uint8Array<ArrayBuffer>): string {
+  return bufferToBase64URLString(bytes.slice().buffer);
 }
 
 async function call(method: string, path: string, body?: unknown): Promise<unknown> {

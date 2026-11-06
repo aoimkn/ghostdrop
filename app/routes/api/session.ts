@@ -1,7 +1,14 @@
-import { sessionContext } from "~/.server/session";
+import { cloudflareContext } from "~/.server/context";
+import { account, sessionContext } from "~/.server/session";
 
 import type { Route } from "./+types/session";
 
-export function loader({ context }: Route.LoaderArgs) {
-  return Response.json({ accountId: context.get(sessionContext).accountId });
+export async function loader({ context }: Route.LoaderArgs) {
+  const { env } = context.get(cloudflareContext);
+  const { accountId, tokenHash } = context.get(sessionContext);
+  const device = await account(env, accountId).currentDevice(tokenHash);
+  return Response.json({
+    accountId,
+    device: device ? { id: device.id, name: device.name, locked: device.locked } : null,
+  });
 }

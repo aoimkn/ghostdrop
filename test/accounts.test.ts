@@ -7,47 +7,16 @@ import { env } from "cloudflare:workers";
 import { assert, describe, expect, it } from "vitest";
 
 import { SoftwareAuthenticator } from "./authenticator";
-import { Client, ORIGIN } from "./client";
-
-type Passkey = { id: string };
-
-async function signUp(client = new Client(), authenticator = new SoftwareAuthenticator(ORIGIN)) {
-  const options = await client.json<PublicKeyCredentialCreationOptionsJSON>(
-    "POST",
-    "/api/sign-up/options",
-  );
-  const response = await client.request(
-    "POST",
-    "/api/sign-up",
-    await authenticator.create(options),
-  );
-  expect(response.status).toBe(204);
-  return { client, authenticator, accountId: options.user.id };
-}
-
-async function signIn(authenticator: SoftwareAuthenticator, client = new Client()) {
-  const options = await client.json<PublicKeyCredentialRequestOptionsJSON>(
-    "POST",
-    "/api/sign-in/options",
-  );
-  return {
-    client,
-    response: await client.request("POST", "/api/sign-in", await authenticator.get(options)),
-  };
-}
-
-async function addPasskey(client: Client, authenticator: SoftwareAuthenticator) {
-  const options = await client.json<PublicKeyCredentialCreationOptionsJSON>(
-    "POST",
-    "/api/passkeys/options",
-  );
-  return client.request("POST", "/api/passkeys", await authenticator.create(options));
-}
+import { Client, ORIGIN, signUpBody } from "./client";
+import { addPasskey, type AddPasskeyOptions, type Passkey, signIn, signUp } from "./helpers";
 
 describe("sign-up", () => {
-  it("creates an account and signs in", async () => {
+  it("creates an account and signs in as its first device", async () => {
     const { client, accountId } = await signUp();
-    expect(await client.json("GET", "/api/session")).toEqual({ accountId });
+    expect(await client.json("GET", "/api/session")).toEqual({
+      accountId,
+      device: { id: expect.any(String), name: "first", locked: false },
+    });
   });
 
   it("asks for a discoverable, user-verified passkey", async () => {
@@ -70,9 +39,9 @@ describe("sign-up", () => {
       "POST",
       "/api/sign-up/options",
     );
-    const credential = await authenticator.create(options);
-    expect((await client.request("POST", "/api/sign-up", credential)).status).toBe(204);
-    expect((await new Client().request("POST", "/api/sign-up", credential)).status).toBe(400);
+    const body = signUpBody(await authenticator.create(options));
+    expect((await client.request("POST", "/api/sign-up", body)).status).toBe(204);
+    expect((await new Client().request("POST", "/api/sign-up", body)).status).toBe(400);
   });
 
   it("rejects a response for another origin", async () => {
@@ -84,7 +53,7 @@ describe("sign-up", () => {
     const credential = await new SoftwareAuthenticator(ORIGIN).create(options, {
       origin: "https://evil.test",
     });
-    expect((await client.request("POST", "/api/sign-up", credential)).status).toBe(400);
+    expect((await client.request("POST", "/api/sign-up", signUpBody(credential))).status).toBe(400);
   });
 
   it("rejects a passkey without user verification", async () => {
@@ -96,7 +65,7 @@ describe("sign-up", () => {
     const credential = await new SoftwareAuthenticator(ORIGIN).create(options, {
       userVerified: false,
     });
-    expect((await client.request("POST", "/api/sign-up", credential)).status).toBe(400);
+    expect((await client.request("POST", "/api/sign-up", signUpBody(credential))).status).toBe(400);
   });
 
   it("rejects a sign-in challenge", async () => {
@@ -113,7 +82,7 @@ describe("sign-up", () => {
       ...signUpOptions,
       challenge: signInOptions.challenge,
     });
-    expect((await client.request("POST", "/api/sign-up", credential)).status).toBe(400);
+    expect((await client.request("POST", "/api/sign-up", signUpBody(credential))).status).toBe(400);
   });
 
   it("rejects an invalid body", async () => {
@@ -126,7 +95,7 @@ describe("sign-in", () => {
     const { authenticator, accountId } = await signUp();
     const { client, response } = await signIn(authenticator);
     expect(response.status).toBe(204);
-    expect(await client.json("GET", "/api/session")).toEqual({ accountId });
+    expect(await client.json("GET", "/api/session")).toEqual({ accountId, device: null });
   });
 
   it("asks for user verification without listing credentials", async () => {
@@ -229,40 +198,58 @@ describe("session", () => {
 
 describe("passkeys", () => {
   it("adds a passkey that can sign in", async () => {
-    const { client, accountId } = await signUp();
+    const { client, authenticator, accountId } = await signUp();
     const second = new SoftwareAuthenticator(ORIGIN);
-    expect((await addPasskey(client, second)).status).toBe(204);
+    expect((await addPasskey(client, authenticator, second)).status).toBe(204);
     expect(await client.json<Passkey[]>("GET", "/api/passkeys")).toHaveLength(2);
     const { client: other } = await signIn(second);
-    expect(await other.json("GET", "/api/session")).toEqual({ accountId });
+    expect(await other.json("GET", "/api/session")).toMatchObject({ accountId });
   });
 
-  it("excludes passkeys already registered", async () => {
+  it("asks to confirm with an existing passkey and excludes registered ones", async () => {
     const { client, authenticator } = await signUp();
-    const options = await client.json<PublicKeyCredentialCreationOptionsJSON>(
-      "POST",
-      "/api/passkeys/options",
-    );
-    expect(options.excludeCredentials?.map(({ id }) => id)).toEqual(
-      authenticator.credentials.map(({ id }) => id),
-    );
+    const options = await client.json<AddPasskeyOptions>("POST", "/api/passkeys/options");
+    const ids = authenticator.credentials.map(({ id }) => id);
+    expect(options.confirm.userVerification).toBe("required");
+    expect(options.confirm.allowCredentials?.map(({ id }) => id)).toEqual(ids);
+    expect(options.create.excludeCredentials?.map(({ id }) => id)).toEqual(ids);
   });
 
-  it("rejects a challenge issued to another account", async () => {
+  it("rejects adding a passkey without a valid confirmation", async () => {
+    const { client, authenticator } = await signUp();
+    const stranger = await signUp();
+    const attempt = async (
+      confirm: (options: PublicKeyCredentialRequestOptionsJSON) => Promise<unknown>,
+    ) => {
+      const options = await client.json<AddPasskeyOptions>("POST", "/api/passkeys/options");
+      return client.request("POST", "/api/passkeys", {
+        confirmation: await confirm(options.confirm),
+        credential: await new SoftwareAuthenticator(ORIGIN).create(options.create),
+      });
+    };
+    expect((await attempt(async () => undefined)).status).toBe(400);
+    expect(
+      (await attempt((options) => authenticator.get(options, { userVerified: false }))).status,
+    ).toBe(400);
+    expect((await attempt((options) => stranger.authenticator.get(options))).status).toBe(400);
+    expect(await client.json<Passkey[]>("GET", "/api/passkeys")).toHaveLength(1);
+  });
+
+  it("rejects challenges issued to another account", async () => {
     const first = await signUp();
     const second = await signUp();
-    const options = await first.client.json<PublicKeyCredentialCreationOptionsJSON>(
-      "POST",
-      "/api/passkeys/options",
-    );
-    const credential = await new SoftwareAuthenticator(ORIGIN).create(options);
-    expect((await second.client.request("POST", "/api/passkeys", credential)).status).toBe(400);
+    const options = await first.client.json<AddPasskeyOptions>("POST", "/api/passkeys/options");
+    const response = await second.client.request("POST", "/api/passkeys", {
+      confirmation: await second.authenticator.get(options.confirm),
+      credential: await new SoftwareAuthenticator(ORIGIN).create(options.create),
+    });
+    expect(response.status).toBe(400);
   });
 
   it("removes a passkey, but never the last one", async () => {
     const { client, authenticator } = await signUp();
     const second = new SoftwareAuthenticator(ORIGIN);
-    await addPasskey(client, second);
+    await addPasskey(client, authenticator, second);
     const [first] = await client.json<Passkey[]>("GET", "/api/passkeys");
     assert(first !== undefined);
     expect((await client.request("DELETE", `/api/passkeys/${first.id}`)).status).toBe(204);
