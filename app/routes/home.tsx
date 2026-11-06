@@ -130,10 +130,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const header = (
     <header className="flex min-h-11 flex-wrap items-center justify-between gap-2">
       <Logo />
-      <div className="flex items-center gap-2">
-        <Link to="/settings" className="gd-button gd-button--subtle label min-h-11">
+      <div className="flex items-center gap-4">
+        <span className="label inline-flex items-center gap-1">
           <DeviceName name={device.name} />
-        </Link>
+        </span>
         <Link
           to="/settings"
           className="gd-button gd-button--subtle label min-h-11 min-w-11"
