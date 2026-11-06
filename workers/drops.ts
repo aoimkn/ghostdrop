@@ -87,15 +87,18 @@ export class Drops {
     sender: Sender,
     targetId: string | null,
     sizes: number[],
-  ): Promise<{ id: string } | "invalid-size" | "too-many-items" | "too-large" | "limit-reached"> {
-    if (!sizes.every(isPaddedSize)) return "invalid-size";
-    if (sizes.length > MAX_ITEMS) return "too-many-items";
+  ): Promise<
+    | { result: "created"; id: string }
+    | { result: "invalid-size" | "too-many-items" | "too-large" | "limit-reached" }
+  > {
+    if (!sizes.every(isPaddedSize)) return { result: "invalid-size" };
+    if (sizes.length > MAX_ITEMS) return { result: "too-many-items" };
     const total = sizes.reduce((sum, size) => sum + size, 0);
-    if (total > maxPaddedTotal(sizes.length)) return "too-large";
+    if (total > maxPaddedTotal(sizes.length)) return { result: "too-large" };
     const count = this.ctx.storage.sql
       .exec<{ n: number }>("SELECT COUNT(*) AS n FROM drops")
       .one().n;
-    if (count >= MAX_PENDING) return "limit-reached";
+    if (count >= MAX_PENDING) return { result: "limit-reached" };
     const id = randomId();
     const now = Date.now();
     this.ctx.storage.transactionSync(() => {
@@ -131,7 +134,7 @@ export class Drops {
       await this.burn(id);
       throw error;
     }
-    return { id };
+    return { result: "created", id };
   }
 
   uploadTarget(

@@ -66,16 +66,25 @@ export class Devices {
 
   // Every attempt is refused while the account is at the limit, so a correct guess cannot
   // be told apart from a wrong one.
-  checkPassphrase(verifier: Uint8Array): "correct" | "wrong" | "too-many-attempts" {
+  checkPassphrase(
+    verifier: Uint8Array,
+  ):
+    | { result: "correct" }
+    | { result: "wrong" }
+    | { result: "too-many-attempts"; retryAt: number } {
     const now = Date.now();
     this.sql.exec("DELETE FROM passphrase_failures WHERE at <= ?", now - FAILURE_WINDOW_MS);
-    const failures = this.sql
-      .exec<{ n: number }>("SELECT COUNT(*) AS n FROM passphrase_failures")
-      .one().n;
-    if (failures >= MAX_FAILURES) return "too-many-attempts";
-    if (this.verifierMatches(verifier)) return "correct";
+    const { n: failures, oldest } = this.sql
+      .exec<{ n: number; oldest: number }>(
+        "SELECT COUNT(*) AS n, MIN(at) AS oldest FROM passphrase_failures",
+      )
+      .one();
+    if (failures >= MAX_FAILURES) {
+      return { result: "too-many-attempts", retryAt: oldest + FAILURE_WINDOW_MS };
+    }
+    if (this.verifierMatches(verifier)) return { result: "correct" };
     this.sql.exec("INSERT INTO passphrase_failures (at) VALUES (?)", now);
-    return "wrong";
+    return { result: "wrong" };
   }
 
   private verifierMatches(verifier: Uint8Array): boolean {

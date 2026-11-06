@@ -2,8 +2,13 @@ import { isoBase64URL } from "@simplewebauthn/server/helpers";
 import type { MiddlewareFunction } from "react-router";
 import { z } from "zod";
 
-export function error(status: number, code: string): Response {
-  return Response.json({ error: code }, { status });
+export function error(status: number, code: string, init: ResponseInit = {}): Response {
+  return Response.json({ error: code }, { ...init, status });
+}
+
+export function tooManyAttempts(retryAt: number): Response {
+  const seconds = Math.max(1, Math.ceil((retryAt - Date.now()) / 1000));
+  return error(429, "too-many-attempts", { headers: { "Retry-After": String(seconds) } });
 }
 
 export const base64url = z.string().regex(/^[A-Za-z0-9_-]+$/);

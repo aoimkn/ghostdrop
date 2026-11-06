@@ -37,11 +37,26 @@ describe("wrong passphrase entries", () => {
     const add = (proof: string) =>
       client.request("POST", "/api/devices", { name: "second", proof });
     for (let i = 0; i < 10; i++) expect((await add(newPassphrase().proof)).status).toBe(403);
-    expect((await add(passphrase.proof)).status).toBe(429);
+    const refused = await add(passphrase.proof);
+    expect(refused.status).toBe(429);
+    expect(await refused.json()).toEqual({ error: "too-many-attempts" });
+    const retryAfter = Number(refused.headers.get("Retry-After"));
+    expect(retryAfter).toBeGreaterThan(60 * 60 - 60);
+    expect(retryAfter).toBeLessThanOrEqual(60 * 60);
     const unlock = await first.request("POST", "/api/device/unlock", { proof: passphrase.proof });
     expect(unlock.status).toBe(429);
+    expect(await unlock.json()).toEqual({ error: "too-many-attempts" });
 
     const stub = env.ACCOUNT.get(env.ACCOUNT.idFromName(accountId));
+    await runInDurableObject(stub, (_, state) => {
+      state.storage.sql.exec(
+        "UPDATE passphrase_failures SET at = ? WHERE at = (SELECT MIN(at) FROM passphrase_failures)",
+        Date.now() - 60 * 60 * 1000 + 30 * 1000,
+      );
+    });
+    const later = await add(passphrase.proof);
+    expect(Number(later.headers.get("Retry-After"))).toBeLessThanOrEqual(30);
+
     await runInDurableObject(stub, (_, state) => {
       state.storage.sql.exec("UPDATE passphrase_failures SET at = ?", Date.now() - 60 * 60 * 1000);
     });

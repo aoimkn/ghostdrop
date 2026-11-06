@@ -38,10 +38,13 @@ export async function action({ request, context }: Route.ActionArgs) {
     target,
     items.map(({ size }) => size),
   );
-  if (result === "no-device" || result === "locked") return error(403, result);
-  if (result === "bad-target" || result === "invalid-size") return error(400, result);
-  if (result === "too-many-items") return error(413, result);
-  if (result === "too-large") return error(413, result);
-  if (result === "limit-reached") return error(409, result);
-  return Response.json(result, { status: 201 });
+  if (result.result === "created") return Response.json({ id: result.id }, { status: 201 });
+  if (result.result === "no-device" || result.result === "locked") return error(403, result.result);
+  if (result.result === "bad-target" || result.result === "invalid-size") {
+    return error(400, result.result);
+  }
+  if (result.result === "too-many-items" || result.result === "too-large") {
+    return error(413, result.result);
+  }
+  return error(409, result.result);
 }

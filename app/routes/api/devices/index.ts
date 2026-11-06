@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { cloudflareContext } from "~/app/.server/context";
-import { error, readJson } from "~/app/.server/http";
+import { error, readJson, tooManyAttempts } from "~/app/.server/http";
 import { deviceNameSchema, newDeviceId } from "~/app/.server/device";
 import { proofSchema, verifier } from "~/app/.server/passphrase-proof";
 import { account, sessionContext } from "~/app/.server/session";
@@ -31,9 +31,10 @@ export async function action({ request, context }: Route.ActionArgs) {
     { id: newDeviceId(), name },
     await verifier(proof),
   );
-  if (result === "wrong-passphrase") return error(403, "wrong-passphrase");
-  if (result === "too-many-attempts") return error(429, "rate-limited");
-  if (result === "already-added") return error(409, "already-added");
-  if (result === "name-taken") return error(409, "name-taken");
+  if (result.result === "wrong-passphrase") return error(403, result.result);
+  if (result.result === "too-many-attempts") return tooManyAttempts(result.retryAt);
+  if (result.result === "already-added" || result.result === "name-taken") {
+    return error(409, result.result);
+  }
   return new Response(null, { status: 204 });
 }

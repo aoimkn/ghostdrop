@@ -83,26 +83,31 @@ export class Account extends DurableObject<Env> {
     tokenHash: string,
     device: { id: string; name: string },
     verifier: Uint8Array,
-  ): Promise<"added" | "wrong-passphrase" | "too-many-attempts" | "already-added" | "name-taken"> {
+  ): Promise<
+    | { result: "added" | "wrong-passphrase" | "already-added" | "name-taken" }
+    | { result: "too-many-attempts"; retryAt: number }
+  > {
     const check = this.devices.checkPassphrase(verifier);
-    if (check === "wrong") return "wrong-passphrase";
-    if (check === "too-many-attempts") return check;
+    if (check.result === "wrong") return { result: "wrong-passphrase" };
+    if (check.result === "too-many-attempts") return check;
     this.purgeExpiredSessions();
     const result = this.devices.add(tokenHash, device);
     await this.settle();
-    return result;
+    return { result };
   }
 
   unlockDevice(
     tokenHash: string,
     verifier: Uint8Array,
-  ): "unlocked" | "wrong-passphrase" | "too-many-attempts" | "no-device" {
-    if (!this.devices.ofSession(tokenHash)) return "no-device";
+  ):
+    | { result: "unlocked" | "wrong-passphrase" | "no-device" }
+    | { result: "too-many-attempts"; retryAt: number } {
+    if (!this.devices.ofSession(tokenHash)) return { result: "no-device" };
     const check = this.devices.checkPassphrase(verifier);
-    if (check === "wrong") return "wrong-passphrase";
-    if (check === "too-many-attempts") return check;
+    if (check.result === "wrong") return { result: "wrong-passphrase" };
+    if (check.result === "too-many-attempts") return check;
     this.devices.unlock(tokenHash);
-    return "unlocked";
+    return { result: "unlocked" };
   }
 
   currentDevice(tokenHash: string): Device | null {
@@ -132,19 +137,36 @@ export class Account extends DurableObject<Env> {
     return { tokenHash };
   }
 
-  async createDrop(tokenHash: string, targetId: string | null, sizes: number[]) {
-    const sender = this.unlockedSender(tokenHash);
-    if (typeof sender === "string") return sender;
+  async createDrop(
+    tokenHash: string,
+    targetId: string | null,
+    sizes: number[],
+  ): Promise<
+    | { result: "created"; id: string }
+    | {
+        result:
+          | "no-device"
+          | "locked"
+          | "bad-target"
+          | "invalid-size"
+          | "too-many-items"
+          | "too-large"
+          | "limit-reached";
+      }
+  > {
+    const unlocked = this.unlockedSender(tokenHash);
+    if (unlocked.result !== "unlocked") return unlocked;
+    const { sender } = unlocked;
     if (targetId !== null && (targetId === sender.deviceId || !this.devices.exists(targetId))) {
-      return "bad-target";
+      return { result: "bad-target" };
     }
     return this.drops.create(sender, targetId, sizes);
   }
 
   dropUploadTarget(tokenHash: string, dropId: string, index: number, part: number) {
-    const sender = this.unlockedSender(tokenHash);
-    if (typeof sender === "string") return null;
-    return this.drops.uploadTarget(sender, dropId, index, part);
+    const unlocked = this.unlockedSender(tokenHash);
+    if (unlocked.result !== "unlocked") return null;
+    return this.drops.uploadTarget(unlocked.sender, dropId, index, part);
   }
 
   async recordDropPart(dropId: string, index: number, part: number, etag: string): Promise<void> {
@@ -156,9 +178,9 @@ export class Account extends DurableObject<Env> {
     dropId: string,
     manifest: Uint8Array,
   ): Promise<"completed" | "not-found" | "incomplete"> {
-    const sender = this.unlockedSender(tokenHash);
-    if (typeof sender === "string") return "not-found";
-    const result = await this.drops.complete(sender, dropId, manifest);
+    const unlocked = this.unlockedSender(tokenHash);
+    if (unlocked.result !== "unlocked") return "not-found";
+    const result = await this.drops.complete(unlocked.sender, dropId, manifest);
     if (result === "completed") this.notify();
     return result;
   }
@@ -171,14 +193,16 @@ export class Account extends DurableObject<Env> {
   }
 
   dropItemKey(tokenHash: string, dropId: string, index: number): string | null {
-    const receiver = this.unlockedSender(tokenHash);
-    if (typeof receiver === "string") return null;
-    return this.drops.itemKey(receiver, dropId, index);
+    const unlocked = this.unlockedSender(tokenHash);
+    if (unlocked.result !== "unlocked") return null;
+    return this.drops.itemKey(unlocked.sender, dropId, index);
   }
 
   async receiveDrop(tokenHash: string, dropId: string): Promise<boolean> {
-    const receiver = this.unlockedSender(tokenHash);
-    if (typeof receiver === "string" || !this.drops.receivable(receiver, dropId)) return false;
+    const unlocked = this.unlockedSender(tokenHash);
+    if (unlocked.result !== "unlocked" || !this.drops.receivable(unlocked.sender, dropId)) {
+      return false;
+    }
     if (await this.drops.burn(dropId)) this.notify();
     return true;
   }
@@ -210,11 +234,13 @@ export class Account extends DurableObject<Env> {
     this.drops.migrate();
   }
 
-  private unlockedSender(tokenHash: string): Sender | "no-device" | "locked" {
+  private unlockedSender(
+    tokenHash: string,
+  ): { result: "unlocked"; sender: Sender } | { result: "no-device" | "locked" } {
     const device = this.devices.ofSession(tokenHash);
-    if (!device) return "no-device";
-    if (device.locked) return "locked";
-    return { deviceId: device.id };
+    if (!device) return { result: "no-device" };
+    if (device.locked) return { result: "locked" };
+    return { result: "unlocked", sender: { deviceId: device.id } };
   }
 
   private purgeExpiredSessions(): void {
