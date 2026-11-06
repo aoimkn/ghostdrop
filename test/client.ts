@@ -1,5 +1,3 @@
-import type { RegistrationResponseJSON } from "@simplewebauthn/server";
-import { isoBase64URL } from "@simplewebauthn/server/helpers";
 import { exports } from "cloudflare:workers";
 
 export const ORIGIN = "https://ghostdrop.test";
@@ -49,22 +47,4 @@ export class Client {
       throw new Error(`${method} ${path}: ${response.status} ${await response.text()}`);
     return response.json<T>();
   }
-}
-
-export type PassphraseMaterial = { params: string; proof: string };
-
-export function newPassphrase(): PassphraseMaterial {
-  return { params: randomBase64URL(17), proof: randomBase64URL(32) };
-}
-
-export function signUpBody(
-  credential: RegistrationResponseJSON,
-  passphrase = newPassphrase(),
-  name = "first",
-) {
-  return { credential, passphrase, device: { name } };
-}
-
-export function randomBase64URL(length: number): string {
-  return isoBase64URL.fromBuffer(crypto.getRandomValues(new Uint8Array(length)));
 }

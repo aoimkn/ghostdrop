@@ -1,11 +1,13 @@
 import type {
   PublicKeyCredentialCreationOptionsJSON,
   PublicKeyCredentialRequestOptionsJSON,
+  RegistrationResponseJSON,
 } from "@simplewebauthn/server";
+import { isoBase64URL } from "@simplewebauthn/server/helpers";
 import { expect } from "vitest";
 
 import { SoftwareAuthenticator } from "./authenticator";
-import { Client, newPassphrase, ORIGIN, signUpBody } from "./client";
+import { Client, ORIGIN } from "./client";
 
 export type Passkey = { id: string };
 
@@ -53,4 +55,22 @@ export async function addPasskey(
     confirmation: await existing.get(options.confirm),
     credential: await added.create(options.create),
   });
+}
+
+export type PassphraseMaterial = { params: string; proof: string };
+
+export function newPassphrase(): PassphraseMaterial {
+  return { params: randomBase64URL(17), proof: randomBase64URL(32) };
+}
+
+export function signUpBody(
+  credential: RegistrationResponseJSON,
+  passphrase = newPassphrase(),
+  name = "first",
+) {
+  return { credential, passphrase, device: { name } };
+}
+
+function randomBase64URL(length: number): string {
+  return isoBase64URL.fromBuffer(crypto.getRandomValues(new Uint8Array(length)));
 }

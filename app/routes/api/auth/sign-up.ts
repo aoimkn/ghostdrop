@@ -3,12 +3,8 @@ import { z } from "zod";
 
 import { cloudflareContext } from "~/app/.server/context";
 import { error, readJson } from "~/app/.server/http";
-import {
-  deviceNameSchema,
-  newDeviceId,
-  passphraseSchema,
-  verifier,
-} from "~/app/.server/passphrase";
+import { deviceNameSchema, newDeviceId } from "~/app/.server/device";
+import { passphraseSchema, verifier } from "~/app/.server/passphrase-proof";
 import { account, startSession } from "~/app/.server/session";
 import { redeemChallenge, registrationResponse, relyingParty } from "~/app/.server/webauthn";
 

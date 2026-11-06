@@ -2,7 +2,7 @@ import { cloudflareContext } from "~/app/.server/context";
 import { error } from "~/app/.server/http";
 import { account, sessionContext } from "~/app/.server/session";
 
-import type { Route } from "./+types/drop-received";
+import type { Route } from "./+types/received";
 
 export async function action({ params, context }: Route.ActionArgs) {
   const { env } = context.get(cloudflareContext);

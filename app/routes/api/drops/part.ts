@@ -2,7 +2,7 @@ import { cloudflareContext } from "~/app/.server/context";
 import { error } from "~/app/.server/http";
 import { account, sessionContext } from "~/app/.server/session";
 
-import type { Route } from "./+types/drop-part";
+import type { Route } from "./+types/part";
 
 export async function action({ request, params, context }: Route.ActionArgs) {
   if (request.method !== "PUT") return error(405, "method-not-allowed");

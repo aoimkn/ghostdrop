@@ -2,7 +2,7 @@ import { cloudflareContext } from "~/app/.server/context";
 import { error } from "~/app/.server/http";
 import { account, sessionContext } from "~/app/.server/session";
 
-import type { Route } from "./+types/drop-item";
+import type { Route } from "./+types/item";
 
 export async function loader({ params, context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { cloudflareContext } from "~/app/.server/context";
 import { error, readJson } from "~/app/.server/http";
-import { deviceNameSchema } from "~/app/.server/passphrase";
+import { deviceNameSchema } from "~/app/.server/device";
 import { account, clearedSessionCookie, sessionContext } from "~/app/.server/session";
 
 import type { Route } from "./+types/device";

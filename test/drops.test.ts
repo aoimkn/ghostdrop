@@ -16,8 +16,8 @@ import {
 import { deriveKey, newParams, proof } from "~/app/lib/passphrase";
 
 import { SoftwareAuthenticator } from "./authenticator";
-import { Client, ORIGIN, signUpBody } from "./client";
-import { signIn } from "./helpers";
+import { Client, ORIGIN } from "./client";
+import { signIn, signUpBody } from "./helpers";
 
 type Drop = {
   id: string;

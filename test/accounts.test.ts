@@ -7,8 +7,15 @@ import { env } from "cloudflare:workers";
 import { assert, describe, expect, it } from "vitest";
 
 import { SoftwareAuthenticator } from "./authenticator";
-import { Client, ORIGIN, signUpBody } from "./client";
-import { addPasskey, type AddPasskeyOptions, type Passkey, signIn, signUp } from "./helpers";
+import { Client, ORIGIN } from "./client";
+import {
+  addPasskey,
+  type AddPasskeyOptions,
+  type Passkey,
+  signIn,
+  signUp,
+  signUpBody,
+} from "./helpers";
 
 describe("sign-up", () => {
   it("creates an account and signs in as its first device", async () => {

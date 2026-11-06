@@ -7,6 +7,7 @@ import { decodeClientDataJSON, isoBase64URL } from "@simplewebauthn/server/helpe
 import { z } from "zod";
 
 import type { ChallengePurpose } from "~/workers/challenge";
+import { base64url } from "./http";
 import { account } from "./session";
 
 export const RP_NAME = "ghostdrop";
@@ -15,8 +16,6 @@ export function relyingParty(request: Request): { id: string; origin: string } {
   const url = new URL(request.url);
   return { id: url.hostname, origin: url.origin };
 }
-
-const base64url = z.string().regex(/^[A-Za-z0-9_-]+$/);
 
 export const registrationResponse = z.looseObject({
   id: base64url,

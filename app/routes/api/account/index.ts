@@ -2,7 +2,7 @@ import { cloudflareContext } from "~/app/.server/context";
 import { error } from "~/app/.server/http";
 import { account, clearedSessionCookie, sessionContext } from "~/app/.server/session";
 
-import type { Route } from "./+types/account";
+import type { Route } from "./+types/index";
 
 export async function action({ request, context }: Route.ActionArgs) {
   if (request.method !== "DELETE") return error(405, "method-not-allowed");

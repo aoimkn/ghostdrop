@@ -2,10 +2,11 @@ import { z } from "zod";
 
 import { cloudflareContext } from "~/app/.server/context";
 import { error, readJson } from "~/app/.server/http";
-import { deviceNameSchema, newDeviceId, proofSchema, verifier } from "~/app/.server/passphrase";
+import { deviceNameSchema, newDeviceId } from "~/app/.server/device";
+import { proofSchema, verifier } from "~/app/.server/passphrase-proof";
 import { account, sessionContext } from "~/app/.server/session";
 
-import type { Route } from "./+types/devices";
+import type { Route } from "./+types/index";
 
 const body = z.object({ name: deviceNameSchema, proof: proofSchema });
 

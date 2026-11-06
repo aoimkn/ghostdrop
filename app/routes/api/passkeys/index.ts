@@ -12,7 +12,7 @@ import {
   verifyAssertion,
 } from "~/app/.server/webauthn";
 
-import type { Route } from "./+types/passkeys";
+import type { Route } from "./+types/index";
 
 const body = z.object({ confirmation: authenticationResponse, credential: registrationResponse });
 

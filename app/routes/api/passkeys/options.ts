@@ -5,7 +5,7 @@ import { cloudflareContext } from "~/app/.server/context";
 import { account, sessionContext } from "~/app/.server/session";
 import { issueChallenge, relyingParty, RP_NAME } from "~/app/.server/webauthn";
 
-import type { Route } from "./+types/passkeys-options";
+import type { Route } from "./+types/options";
 
 export async function action({ request, context }: Route.ActionArgs) {
   const { env } = context.get(cloudflareContext);

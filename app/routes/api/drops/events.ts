@@ -1,5 +1,5 @@
 import { cloudflareContext } from "~/app/.server/context";
-import { error } from "~/app/.server/http";
+import { error, isSameOrigin } from "~/app/.server/http";
 import { account, sessionContext } from "~/app/.server/session";
 
 import type { Route } from "./+types/events";
@@ -8,9 +8,7 @@ import type { Route } from "./+types/events";
 // same-origin middleware lets through, so the origin is checked here.
 export async function loader({ request, context }: Route.LoaderArgs) {
   if (request.headers.get("Upgrade") !== "websocket") return error(426, "upgrade-required");
-  if (request.headers.get("Origin") !== new URL(request.url).origin) {
-    return error(403, "cross-origin");
-  }
+  if (!isSameOrigin(request)) return error(403, "cross-origin");
   const { env } = context.get(cloudflareContext);
   const { accountId, tokenHash } = context.get(sessionContext);
   const stub = account(env, accountId);

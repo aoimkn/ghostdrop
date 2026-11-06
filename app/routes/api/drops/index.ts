@@ -5,7 +5,7 @@ import { cloudflareContext } from "~/app/.server/context";
 import { error, readJson } from "~/app/.server/http";
 import { account, sessionContext } from "~/app/.server/session";
 
-import type { Route } from "./+types/drops";
+import type { Route } from "./+types/index";
 
 const body = z.object({
   target: z.string().nullable(),

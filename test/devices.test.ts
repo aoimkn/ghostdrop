@@ -2,8 +2,8 @@ import { runInDurableObject } from "cloudflare:test";
 import { env } from "cloudflare:workers";
 import { assert, describe, expect, it } from "vitest";
 
-import { Client, newPassphrase, type PassphraseMaterial } from "./client";
-import { signIn, signUp } from "./helpers";
+import { Client } from "./client";
+import { newPassphrase, type PassphraseMaterial, signIn, signUp } from "./helpers";
 
 type Device = { id: string; name: string; locked: boolean; current: boolean; createdAt: number };
 type Session = { accountId: string; device: { id: string; name: string; locked: boolean } | null };
@@ -187,7 +187,7 @@ describe("replacing the passphrase", () => {
     const response = await client.request("POST", "/api/device/unlock", {
       proof: passphrase.proof,
     });
-    expect(response.status).toBe(409);
+    expect(response.status).toBe(403);
   });
 
   it("rejects malformed passphrase material", async () => {

@@ -12,9 +12,9 @@ const LIFETIME_MS = 24 * 60 * 60 * 1000;
 const UPLOAD_TIMEOUT_MS = 60 * 60 * 1000;
 const MAX_PENDING = 10;
 
-export type DropItem = { size: number };
+type DropItem = { size: number };
 
-export type DeviceRef = { id: string; name: string | null };
+type DeviceRef = { id: string; name: string | null };
 
 export type DropSummary = {
   id: string;
@@ -42,7 +42,7 @@ type ItemRow = { drop_id: string; idx: number; size: number; upload_id: string |
 
 type Cleanup = { key: string; uploadId: string | null };
 
-export function objectKey(dropId: string, index: number): string {
+function objectKey(dropId: string, index: number): string {
   return `drops/${dropId}/${index}`;
 }
 

@@ -1,8 +1,18 @@
+import { isoBase64URL } from "@simplewebauthn/server/helpers";
 import type { MiddlewareFunction } from "react-router";
-import type { z } from "zod";
+import { z } from "zod";
 
 export function error(status: number, code: string): Response {
   return Response.json({ error: code }, { status });
+}
+
+export const base64url = z.string().regex(/^[A-Za-z0-9_-]+$/);
+
+export function base64urlBytes({ maxBytes }: { maxBytes: number }) {
+  return base64url
+    .max(Math.ceil((maxBytes * 4) / 3))
+    .transform((value) => isoBase64URL.toBuffer(value))
+    .refine((value) => value.length <= maxBytes);
 }
 
 export async function readJson<T extends z.ZodType>(
@@ -15,11 +25,14 @@ export async function readJson<T extends z.ZodType>(
   return result.data;
 }
 
+export function isSameOrigin(request: Request): boolean {
+  return request.headers.get("Origin") === new URL(request.url).origin;
+}
+
 // React Router's built-in action origin check covers UI routes only, not resource routes.
 export const requireSameOrigin: MiddlewareFunction<Response> = ({ request }, next) => {
-  if (request.method !== "GET" && request.method !== "HEAD") {
-    if (request.headers.get("Origin") !== new URL(request.url).origin)
-      throw error(403, "cross-origin");
+  if (request.method !== "GET" && request.method !== "HEAD" && !isSameOrigin(request)) {
+    throw error(403, "cross-origin");
   }
   return next();
 };
