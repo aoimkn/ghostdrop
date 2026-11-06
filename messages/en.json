@@ -62,6 +62,8 @@
   "device_unlock_title": "Enter your new passphrase",
   "drop_clipboard_title": "Clipboard",
   "drop_compose_title": "New drop",
+  "drop_copied": "Copied",
+  "drop_copy_failed": "Couldn’t copy. Try again.",
   "drop_copy_to_clipboard": "Copy",
   "drop_delete": "Delete",
   "drop_download": "Download",

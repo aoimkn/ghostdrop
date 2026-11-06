@@ -1,3 +1,4 @@
+import { CheckIcon } from "@phosphor-icons/react/dist/csr/Check";
 import { DownloadSimpleIcon } from "@phosphor-icons/react/dist/csr/DownloadSimple";
 import { ExportIcon } from "@phosphor-icons/react/dist/csr/Export";
 import { useEffect, useState } from "react";
@@ -5,6 +6,7 @@ import { useEffect, useState } from "react";
 import { type Item, planOutput, toClipboardItem, toFile, totalSize } from "~/app/lib/content";
 import { formatSize } from "~/app/ui/format";
 import { m } from "~/app/paraglide/messages";
+import { Alert } from "~/app/ui/alert";
 
 function canShare(file: File): boolean {
   return typeof navigator.canShare === "function" && navigator.canShare({ files: [file] });
@@ -19,26 +21,54 @@ function download(file: File, name: string) {
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
+const COPIED_MS = 2000;
+
 function ClipboardEntry({ entry, surface }: { entry: readonly Item[]; surface: string }) {
   const [preview, setPreview] = useState<string | null>(null);
+  const [copy, setCopy] = useState<"idle" | "copied" | "failed">("idle");
   const text = entry.find((item) => item.type.startsWith("text/plain"));
   useEffect(() => {
     if (text) void text.content.text().then(setPreview);
   }, [text]);
+  useEffect(() => {
+    const timer = copy === "copied" ? setTimeout(() => setCopy("idle"), COPIED_MS) : undefined;
+    return () => clearTimeout(timer);
+  }, [copy]);
+
+  const write = async () => {
+    try {
+      await navigator.clipboard.write([toClipboardItem(entry)]);
+      setCopy("copied");
+    } catch {
+      setCopy("failed");
+    }
+  };
+
   return (
-    <div className={`flex flex-col gap-4 rounded-md p-4 ${surface}`}>
-      <div className="mono text-ink-muted">
-        {entry.map((item) => item.type).join(", ")} &middot; {formatSize(totalSize(entry))}
+    <>
+      {copy === "failed" && <Alert tone="danger">{m.drop_copy_failed()}</Alert>}
+      <div className={`flex flex-col gap-4 rounded-md p-4 ${surface}`}>
+        <div className="mono text-ink-muted">
+          {entry.map((item) => item.type).join(", ")} &middot; {formatSize(totalSize(entry))}
+        </div>
+        {preview !== null && <p className="body m-0 line-clamp-3 wrap-break-word">{preview}</p>}
+        <button
+          type="button"
+          className={`gd-button label min-h-11 ${copy === "copied" ? "gd-button--secondary" : "gd-button--primary"}`}
+          aria-live="polite"
+          onClick={() => void write()}
+        >
+          {copy === "copied" ? (
+            <>
+              <CheckIcon size={20} aria-hidden />
+              {m.drop_copied()}
+            </>
+          ) : (
+            m.drop_copy_to_clipboard()
+          )}
+        </button>
       </div>
-      {preview !== null && <p className="body m-0 line-clamp-3 wrap-break-word">{preview}</p>}
-      <button
-        type="button"
-        className="gd-button gd-button--primary label min-h-11"
-        onClick={() => void navigator.clipboard.write([toClipboardItem(entry)])}
-      >
-        {m.drop_copy_to_clipboard()}
-      </button>
-    </div>
+    </>
   );
 }
 

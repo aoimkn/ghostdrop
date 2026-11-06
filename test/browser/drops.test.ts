@@ -53,3 +53,30 @@ test("text being written can be removed from the drop", async ({ browser }) => {
   await expect(desktop.page.getByLabel("[drop_text_label]")).toHaveCount(0);
   await expect(desktop.page.getByRole("button", { name: "[drop_send]" })).toBeDisabled();
 });
+
+test("copying a received text says whether it worked", async ({ browser }) => {
+  const phone = await open(browser, PHONE);
+  await signUp(phone.page, "iPhone");
+  await phone.page.getByRole("button", { name: "[drop_write_text]" }).click();
+  await phone.page.getByLabel("[drop_text_label]").fill("Copy me.");
+  await phone.page.getByRole("button", { name: "[drop_send]" }).click();
+
+  const desktop = await open(browser, DESKTOP);
+  await signInAs(desktop.page, desktop.authenticator, phone.authenticator);
+  await addDevice(desktop.page, PASSPHRASE, "MacBook Air");
+  await desktop.page.getByRole("button", { name: "[drop_receive]" }).click();
+
+  await desktop.page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await desktop.page.getByRole("button", { name: "[drop_copy_to_clipboard]" }).click();
+  await expect(desktop.page.getByRole("button", { name: "[drop_copied]" })).toBeVisible();
+  expect(await desktop.page.evaluate(() => navigator.clipboard.readText())).toBe("Copy me.");
+  await expect(
+    desktop.page.getByRole("button", { name: "[drop_copy_to_clipboard]" }),
+  ).toBeVisible();
+
+  await desktop.page.evaluate(() => {
+    navigator.clipboard.write = () => Promise.reject(new DOMException("denied", "NotAllowedError"));
+  });
+  await desktop.page.getByRole("button", { name: "[drop_copy_to_clipboard]" }).click();
+  await expect(desktop.page.getByText("[drop_copy_failed]")).toBeVisible();
+});

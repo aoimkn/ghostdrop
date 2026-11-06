@@ -47,6 +47,8 @@
   "device_unlock_title": "新しいパスフレーズを入力",
   "drop_clipboard_title": "クリップボード",
   "drop_compose_title": "新規送信",
+  "drop_copied": "コピーしました",
+  "drop_copy_failed": "コピーできませんでした。もう一度試してください。",
   "drop_copy_to_clipboard": "コピー",
   "drop_delete": "削除",
   "drop_download": "ダウンロード",
