@@ -1,0 +1,329 @@
+/* ghostdrop components: plain CSS on top of the design tokens. Pair each component class with a type style class (body, label, caption, mono). */
+
+.gd-focus:focus-visible,
+.gd-button:focus-visible,
+.gd-field__input:focus-visible,
+.gd-dropzone:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Button */
+.gd-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-height: 36px;
+  padding: 0 var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  cursor: pointer;
+  background: transparent;
+  color: var(--ink);
+}
+.gd-button--primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.gd-button--secondary {
+  border-color: var(--border);
+  color: var(--ink);
+}
+.gd-button--danger {
+  background: var(--danger);
+  color: var(--on-accent);
+}
+.gd-button--subtle {
+  background: var(--surface-sunken);
+  color: var(--ink);
+  min-height: 32px;
+  padding: 0 var(--space-2);
+}
+.gd-button--destructive {
+  color: var(--danger);
+}
+.gd-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.gd-button[aria-busy="true"] {
+  cursor: progress;
+}
+
+/* Text field */
+.gd-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.gd-field__label {
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+.gd-field__input {
+  min-height: 40px;
+  padding: 0 var(--space-2);
+  background: var(--surface-sunken);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+}
+.gd-field__hint {
+  color: var(--ink-muted);
+  font-family: var(--font-sans);
+}
+.gd-field--error .gd-field__input {
+  border-color: var(--danger);
+}
+.gd-field--error .gd-field__hint {
+  color: var(--danger);
+}
+
+/* Badge */
+.gd-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+.gd-badge--accent {
+  color: var(--accent);
+}
+.gd-badge--signal {
+  color: var(--signal);
+}
+.gd-badge--warning {
+  color: var(--warning);
+}
+.gd-badge--danger {
+  color: var(--danger);
+}
+
+/* Drop zone */
+.gd-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 160px;
+  padding: var(--space-6);
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-sans);
+  text-align: center;
+}
+.gd-dropzone--active {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+/* Drop row */
+.gd-drop {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding: var(--space-4);
+  background: var(--surface-raised);
+  border-radius: var(--radius-md);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+.gd-drop__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1 1 240px;
+  min-width: 0;
+}
+.gd-drop__route {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.gd-drop__arrow {
+  color: var(--ink-muted);
+}
+.gd-drop__meta {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.gd-drop__expiry {
+  color: var(--ink-muted);
+}
+.gd-drop__unknown {
+  color: var(--ink-muted);
+  font-style: italic;
+}
+.gd-drop__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.gd-drop--arrived {
+  outline: 1px solid var(--signal);
+  outline-offset: -1px;
+}
+
+/* Dialog */
+.gd-dialog-backdrop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  background: color-mix(in srgb, var(--surface-sunken) 72%, transparent);
+}
+.gd-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: min(440px, 100%);
+  padding: var(--space-6);
+  background: var(--surface-raised);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-sans);
+}
+.gd-dialog__title {
+  margin: 0;
+}
+.gd-dialog__body {
+  margin: 0;
+  color: var(--ink);
+}
+/* Two equal columns, so a long label wraps inside its button instead of pushing the confirm button onto its own line. */
+.gd-dialog__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+.gd-dialog__actions .gd-button {
+  min-height: 44px;
+  padding-block: var(--space-2);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+/* Device row */
+.gd-device {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+.gd-device__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.gd-device__name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.gd-device__since {
+  color: var(--ink-muted);
+}
+
+/* Logo: the wordmark is "gh" + the symbol + "stdrop" in sans 600; the symbol stands in for the "o". */
+.gd-logo {
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  line-height: 1;
+}
+.gd-logo__o {
+  display: inline-block;
+  width: 0.775em;
+  height: 0.775em;
+  vertical-align: -0.075em;
+  margin: 0 0.025em;
+}
+.gd-logo__vessel {
+  fill: var(--accent);
+}
+.gd-logo__soul {
+  fill: var(--signal);
+}
+
+/* Progress: a native <progress max="1">, so assistive tech reads the value without ARIA. */
+.gd-progress {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--surface-sunken);
+  color: var(--accent);
+}
+.gd-progress::-webkit-progress-bar {
+  background: transparent;
+}
+.gd-progress::-webkit-progress-value {
+  background: currentColor;
+  border-radius: var(--radius-sm);
+}
+.gd-progress::-moz-progress-bar {
+  background: currentColor;
+  border-radius: var(--radius-sm);
+}
+.gd-progress--stopped {
+  color: var(--border);
+}
+
+/* Alert */
+.gd-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--surface-raised);
+  color: var(--ink);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+}
+.gd-alert__icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  color: var(--danger);
+}
+.gd-alert__main {
+  flex: 1;
+  min-width: 0;
+}
+.gd-alert--warning {
+  border-color: var(--warning);
+}
+.gd-alert--warning .gd-alert__icon {
+  color: var(--warning);
+}

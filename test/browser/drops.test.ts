@@ -1,0 +1,83 @@
+import { type Browser, expect, type Page, test } from "@playwright/test";
+
+import { attachAuthenticator, type Authenticator } from "./authenticator";
+
+const PHONE = { width: 390, height: 844 };
+const DESKTOP = { width: 1280, height: 800 };
+const PASSPHRASE = "lantern orchard copper meadow";
+
+async function open(browser: Browser, viewport: { width: number; height: number }) {
+  const context = await browser.newContext({ viewport });
+  const page = await context.newPage();
+  return { page, authenticator: await attachAuthenticator(page) };
+}
+
+async function signUp(page: Page, deviceName: string) {
+  await page.goto("/");
+  await page.getByRole("link", { name: "[account_sign_up]" }).click();
+  await page.getByLabel("[passphrase_new_label]").fill(PASSPHRASE);
+  await page.getByLabel("[device_name_label]").fill(deviceName);
+  await page.getByRole("button", { name: "[account_sign_up]" }).click();
+  await expect(page.getByText("[drop_pending_title]")).toBeVisible();
+}
+
+async function signInAs(page: Page, authenticator: Authenticator, from: Authenticator) {
+  await authenticator.add(await from.credentials());
+  await page.goto("/");
+  await page.getByRole("button", { name: "[account_sign_in]" }).click();
+  await expect(page).toHaveURL(/\/add-device$/);
+}
+
+async function addDevice(page: Page, passphrase: string, deviceName: string) {
+  await page.getByLabel("[passphrase_label]").fill(passphrase);
+  await page.getByLabel("[device_name_label]").fill(deviceName);
+  await page.getByRole("button", { name: "[device_add]" }).click();
+}
+
+test("a drop sent from one device is received on another and burned", async ({ browser }) => {
+  const phone = await open(browser, PHONE);
+  await signUp(phone.page, "iPhone");
+
+  await phone.page.getByRole("button", { name: "[drop_write_text]" }).click();
+  await phone.page.getByLabel("[drop_text_label]").fill("Move the launch review to Thursday.");
+  await phone.page.getByRole("button", { name: "[drop_send]" }).click();
+  await expect(phone.page.locator(".gd-drop")).toHaveCount(1);
+
+  const desktop = await open(browser, DESKTOP);
+  await signInAs(desktop.page, desktop.authenticator, phone.authenticator);
+  await addDevice(desktop.page, "not the passphrase at all", "MacBook Air");
+  await expect(desktop.page.getByText("[error_wrong_passphrase]")).toBeVisible();
+  await addDevice(desktop.page, PASSPHRASE, "MacBook Air");
+
+  await desktop.page.getByRole("button", { name: "[drop_receive]" }).click();
+  await expect(desktop.page.getByText("Move the launch review to Thursday.")).toBeVisible();
+  await expect(desktop.page.getByText("[drop_pending_empty]")).toBeVisible();
+  await expect(phone.page.getByText("[drop_pending_empty]")).toBeVisible();
+});
+
+test("replacing the passphrase locks the other devices until they enter it", async ({
+  browser,
+}) => {
+  const phone = await open(browser, PHONE);
+  await signUp(phone.page, "iPhone");
+  const desktop = await open(browser, DESKTOP);
+  await signInAs(desktop.page, desktop.authenticator, phone.authenticator);
+  await addDevice(desktop.page, PASSPHRASE, "MacBook Air");
+  await expect(desktop.page.getByText("[drop_pending_title]")).toBeVisible();
+
+  const replaced = "a different passphrase for this account";
+  await phone.page.goto("/settings/passphrase");
+  await phone.page.getByLabel("[passphrase_new_label]").fill(replaced);
+  await phone.page.getByRole("button", { name: "[passphrase_replace]" }).click();
+  await phone.page.getByRole("button", { name: "[passphrase_replace_confirm]" }).click();
+  await expect(phone.page.getByText("[drop_pending_title]")).toBeVisible();
+
+  await desktop.page.reload();
+  await expect(desktop.page).toHaveURL(/\/unlock$/);
+  await desktop.page.getByLabel("[passphrase_label]").fill(PASSPHRASE);
+  await desktop.page.getByRole("button", { name: "[device_unlock]" }).click();
+  await expect(desktop.page.getByText("[error_wrong_passphrase]")).toBeVisible();
+  await desktop.page.getByLabel("[passphrase_label]").fill(replaced);
+  await desktop.page.getByRole("button", { name: "[device_unlock]" }).click();
+  await expect(desktop.page.getByText("[drop_pending_title]")).toBeVisible();
+});

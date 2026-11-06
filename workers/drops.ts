@@ -3,6 +3,7 @@ import { isoBase64URL } from "@simplewebauthn/server/helpers";
 import {
   isPaddedSize,
   MAX_ITEMS,
+  MAX_PENDING_DROPS,
   maxPaddedTotal,
   partCount,
   partSize,
@@ -10,7 +11,6 @@ import {
 
 const LIFETIME_MS = 24 * 60 * 60 * 1000;
 const UPLOAD_TIMEOUT_MS = 60 * 60 * 1000;
-const MAX_PENDING = 10;
 
 type DropItem = { size: number };
 
@@ -98,7 +98,7 @@ export class Drops {
     const count = this.ctx.storage.sql
       .exec<{ n: number }>("SELECT COUNT(*) AS n FROM drops")
       .one().n;
-    if (count >= MAX_PENDING) return { result: "limit-reached" };
+    if (count >= MAX_PENDING_DROPS) return { result: "limit-reached" };
     const id = randomId();
     const now = Date.now();
     this.ctx.storage.transactionSync(() => {

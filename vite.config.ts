@@ -8,7 +8,9 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [
-    paraglideVitePlugin({ project: "./project.inlang" }),
+    // E2E builds point this at a copy whose messages are their own keys, so tests can find
+    // elements whatever the copy says.
+    paraglideVitePlugin({ project: process.env.PARAGLIDE_PROJECT ?? "./project.inlang" }),
     cloudflare({ viteEnvironment: { name: "ssr" } }),
     tailwindcss(),
     reactRouter(),

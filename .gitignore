@@ -12,3 +12,8 @@ worker-configuration.d.ts
 # Paraglide
 /app/paraglide/
 /project.inlang/cache/
+
+# Playwright
+/test/browser/.generated/
+/test-results/
+/playwright-report/

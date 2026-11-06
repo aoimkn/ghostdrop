@@ -10,5 +10,5 @@ export default defineConfig({
     reactRouter(),
   ],
   resolve: { tsconfigPaths: true },
-  test: { passWithNoTests: true },
+  test: { include: ["test/worker/**/*.test.ts"], passWithNoTests: true },
 });

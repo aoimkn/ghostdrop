@@ -10,9 +10,13 @@
     "typegen": "wrangler types && react-router typegen && paraglide-js compile --project ./project.inlang",
     "lint": "pnpm typegen && oxlint",
     "fmt": "oxfmt",
-    "test": "vitest run"
+    "test:worker": "vitest run",
+    "test:browser": "playwright test"
   },
   "dependencies": {
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/ibm-plex-sans-jp": "^5.3.1",
+    "@phosphor-icons/react": "^2.1.10",
     "@simplewebauthn/browser": "^14.0.0",
     "@simplewebauthn/server": "^14.0.3",
     "isbot": "^5.1.36",
@@ -27,6 +31,7 @@
     "@cloudflare/vitest-plugin": "^1.5.1",
     "@inlang/paraglide-js": "^3.1.0",
     "@inlang/plugin-message-format": "^4.6.0",
+    "@playwright/test": "^1.64.1",
     "@react-router/dev": "^8.5.1",
     "@rolldown/plugin-babel": "^0.3.0",
     "@tailwindcss/vite": "^4.2.2",

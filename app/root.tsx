@@ -1,4 +1,5 @@
 import {
+  type LinksFunction,
   Links,
   Meta,
   Outlet,
@@ -13,6 +14,10 @@ import "./app.css";
 
 export const middleware: MiddlewareFunction<Response>[] = [
   ({ request }, next) => paraglideMiddleware(request, () => next()),
+];
+
+export const links: LinksFunction = () => [
+  { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {

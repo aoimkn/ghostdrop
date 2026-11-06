@@ -3,7 +3,14 @@ import { z } from "zod";
 
 import { call, request } from "./api.client";
 import { type ItemMeta, openItem, openManifest, sealManifest, sealPart } from "./drop-crypto";
-import { MAX_DROP_BYTES, MAX_ITEMS, paddedSize, partCount } from "./drop-format";
+import {
+  MAX_DROP_BYTES,
+  MAX_ITEMS,
+  paddedSize,
+  partCount,
+  partSize,
+  sealedSize,
+} from "./drop-format";
 import type { Item } from "./content";
 import { loadKey } from "./keystore.client";
 
@@ -31,7 +38,13 @@ export class TooManyItemsError extends Error {}
 
 export class MismatchedDropError extends Error {}
 
-export async function sendDrop(items: Item[], target: string | null): Promise<void> {
+export type Progress = (fraction: number) => void;
+
+export async function sendDrop(
+  items: Item[],
+  target: string | null,
+  { onProgress, signal }: { onProgress?: Progress; signal?: AbortSignal } = {},
+): Promise<void> {
   const master = await requireKey();
   const total = items.reduce((sum, { content }) => sum + content.size, 0);
   if (total > MAX_DROP_BYTES) throw new DropTooLargeError();
@@ -45,11 +58,22 @@ export async function sendDrop(items: Item[], target: string | null): Promise<vo
       }),
     );
   const dropId = decode(id);
+  const totalBytes = items.reduce(
+    (sum, { content }) => sum + sealedSize(paddedSize(content.size)),
+    0,
+  );
+  let sentBytes = 0;
   try {
     const jobs = items.flatMap(({ content }, index) =>
       Array.from({ length: partCount(paddedSize(content.size)) }, (_, part) => async () => {
+        signal?.throwIfAborted();
         const sealed = await sealPart(master, dropId, index, content, part);
-        await request("PUT", `/api/drops/${id}/items/${index}/parts/${part}`, { body: sealed });
+        await request("PUT", `/api/drops/${id}/items/${index}/parts/${part}`, {
+          body: sealed,
+          signal,
+        });
+        sentBytes += partSize(paddedSize(content.size), part);
+        onProgress?.(sentBytes / totalBytes);
       }),
     );
     await runConcurrently(jobs, UPLOAD_CONCURRENCY);
@@ -81,7 +105,14 @@ export function isReceivable(candidate: Drop, deviceId: string): boolean {
     : candidate.target.id === deviceId;
 }
 
-export async function receiveDrop(candidate: Drop): Promise<Item[]> {
+export async function readManifest(candidate: Drop): Promise<ItemMeta[]> {
+  return openManifest(await requireKey(), decode(candidate.id), decode(candidate.manifest));
+}
+
+export async function receiveDrop(
+  candidate: Drop,
+  { onProgress }: { onProgress?: Progress } = {},
+): Promise<Item[]> {
   const master = await requireKey();
   const dropId = decode(candidate.id);
   const meta = await openManifest(master, dropId, decode(candidate.manifest));
@@ -91,11 +122,27 @@ export async function receiveDrop(candidate: Drop): Promise<Item[]> {
   ) {
     throw new MismatchedDropError();
   }
+  const totalBytes = candidate.items.reduce((sum, { size }) => sum + sealedSize(size), 0);
+  let readBytes = 0;
+  const counted = () =>
+    new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        readBytes += chunk.byteLength;
+        onProgress?.(readBytes / totalBytes);
+        controller.enqueue(chunk);
+      },
+    });
   const received: Item[] = [];
   for (const [index, item] of meta.entries()) {
     const response = await request("GET", `/api/drops/${candidate.id}/items/${index}`);
     if (!response.body) throw new MismatchedDropError();
-    const plain = await openItem(master, dropId, index, item.size, response.body);
+    const plain = await openItem(
+      master,
+      dropId,
+      index,
+      item.size,
+      response.body.pipeThrough(counted()),
+    );
     received.push({
       type: item.type,
       name: item.name,

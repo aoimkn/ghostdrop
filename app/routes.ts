@@ -1,6 +1,13 @@
-import { type RouteConfig, layout, prefix, route } from "@react-router/dev/routes";
+import { type RouteConfig, index, layout, prefix, route } from "@react-router/dev/routes";
 
 export default [
+  index("routes/home.tsx"),
+  route("sign-in", "routes/sign-in.tsx"),
+  route("sign-up", "routes/sign-up.tsx"),
+  route("add-device", "routes/add-device.tsx"),
+  route("unlock", "routes/unlock.tsx"),
+  route("settings", "routes/settings.tsx"),
+  route("settings/passphrase", "routes/replace-passphrase.tsx"),
   ...prefix("api", [
     layout("routes/api/layout.ts", [
       route("sign-up/options", "routes/api/auth/sign-up-options.ts"),

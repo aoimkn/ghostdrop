@@ -1,6 +1,7 @@
 export const FORMAT_VERSION = 1;
 export const MAX_DROP_BYTES = 100 * 1024 * 1024;
 export const MAX_ITEMS = 100;
+export const MAX_PENDING_DROPS = 10;
 export const RECORD_BYTES = 64 * 1024;
 export const TAG_BYTES = 16;
 export const SEALED_RECORD_BYTES = RECORD_BYTES + TAG_BYTES;
