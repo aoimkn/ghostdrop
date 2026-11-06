@@ -100,3 +100,29 @@ test("home says when the device is offline and stops once it is back", async ({ 
   await phone.page.context().setOffline(false);
   await expect(phone.page.getByText("[common_offline]")).toBeHidden({ timeout: 15_000 });
 });
+
+test("a receive that fails keeps the drop so it can be tried again", async ({ browser }) => {
+  const phone = await open(browser, PHONE);
+  await signUp(phone.page, "iPhone");
+  await phone.page.getByRole("button", { name: "[drop_write_text]" }).click();
+  await phone.page.getByLabel("[drop_text_label]").fill("Retry me.");
+  await phone.page.getByRole("button", { name: "[drop_send]" }).click();
+
+  const desktop = await open(browser, DESKTOP);
+  await signInAs(desktop.page, desktop.authenticator, phone.authenticator);
+  await addDevice(desktop.page, PASSPHRASE, "MacBook Air");
+
+  await desktop.page.route("**/api/drops/*/items/*", (route) => route.abort());
+  await desktop.page.getByRole("button", { name: "[drop_receive]" }).click();
+  await expect(desktop.page.getByText("[drop_receive_failed]")).toHaveCount(2);
+  await desktop.page.unroute("**/api/drops/*/items/*");
+
+  await desktop.page.getByRole("button", { name: "[common_retry]" }).click();
+  await expect(desktop.page.getByText("Retry me.")).toBeVisible();
+});
+
+test("a page that cannot load shows the unexpected-error screen", async ({ page }) => {
+  await page.route("**/api/session", (route) => route.abort());
+  await page.goto("/");
+  await expect(page.getByText("[error_unknown_title]")).toBeVisible();
+});
