@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Suspense, use, useState } from "react";
 import { useNavigate } from "react-router";
 
 import { onlyAt } from "~/app/.server/stage";
@@ -12,6 +12,7 @@ import { Dialog } from "~/app/ui/dialog";
 import { errorMessage } from "~/app/ui/error-message";
 import { Field } from "~/app/ui/field";
 import { BackHeader, Column } from "~/app/ui/page";
+import { LineSkeleton } from "~/app/ui/skeleton";
 
 import type { Route } from "./+types/replace-passphrase";
 
@@ -19,11 +20,22 @@ export const middleware: Route.MiddlewareFunction[] = [onlyAt("device")];
 
 export async function clientLoader() {
   await requireReady();
-  const [devices, drops] = await Promise.all([listDevices(), listDrops()]);
   return {
-    otherDevices: devices.filter((device) => !device.current).length,
-    pendingDrops: drops.length,
+    counts: Promise.all([listDevices(), listDrops()]).then(([devices, drops]) => ({
+      otherDevices: devices.filter((device) => !device.current).length,
+      pendingDrops: drops.length,
+    })),
   };
+}
+
+function Counts({ counts }: { counts: Route.ComponentProps["loaderData"]["counts"] }) {
+  const { otherDevices, pendingDrops } = use(counts);
+  return (
+    <span className="mono text-ink-muted">
+      {m.drop_pending_count({ count: pendingDrops })} &middot;{" "}
+      {m.device_other_count({ count: otherDevices })}
+    </span>
+  );
 }
 
 export default function ReplacePassphrase({ loaderData }: Route.ComponentProps) {
@@ -86,10 +98,9 @@ export default function ReplacePassphrase({ loaderData }: Route.ComponentProps) 
           onCancel={() => setConfirming(false)}
           onConfirm={() => void confirm()}
         >
-          <span className="mono text-ink-muted">
-            {m.drop_pending_count({ count: loaderData.pendingDrops })} &middot;{" "}
-            {m.device_other_count({ count: loaderData.otherDevices })}
-          </span>
+          <Suspense fallback={<LineSkeleton />}>
+            <Counts counts={loaderData.counts} />
+          </Suspense>
         </Dialog>
       )}
     </Column>

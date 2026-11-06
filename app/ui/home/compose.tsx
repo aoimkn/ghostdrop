@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Suspense, use, useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { Device } from "~/app/lib/account.client";
 import { groupEntries, type Item, totalSize } from "~/app/lib/content";
@@ -7,6 +7,7 @@ import { formatSize, formatSizeOf } from "~/app/ui/format";
 import { m } from "~/app/paraglide/messages";
 import { Alert } from "~/app/ui/alert";
 import { LockedBadge } from "~/app/ui/device";
+import { DeviceRowsSkeleton } from "~/app/ui/skeleton";
 import { TransferProgress } from "~/app/ui/progress";
 
 import type { Compose } from "./use-compose";
@@ -128,46 +129,57 @@ export function Sources({ compose, wide }: { compose: Compose; wide: boolean }) 
   );
 }
 
+function TargetOptions({
+  compose,
+  devices,
+  wide,
+}: {
+  compose: Compose;
+  devices: Promise<Device[]>;
+  wide: boolean;
+}) {
+  const options = [
+    { id: null, name: m.drop_target_any(), locked: false },
+    ...use(devices).filter((device) => !device.current),
+  ];
+  return options.map((option) => (
+    <label
+      key={option.id ?? ""}
+      className={
+        wide
+          ? "gd-button gd-button--secondary gd-choice label"
+          : "gd-choice body flex min-h-12 items-center gap-3 border-b border-border px-4 last:border-b-0"
+      }
+    >
+      <input
+        type="radio"
+        name="target"
+        className="accent-accent"
+        checked={compose.target === option.id}
+        onChange={() => compose.setTarget(option.id)}
+      />
+      <span>{option.name}</span>
+      {option.locked && <LockedBadge />}
+    </label>
+  ));
+}
+
 function Targets({
   compose,
   devices,
   wide,
 }: {
   compose: Compose;
-  devices: readonly Device[];
+  devices: Promise<Device[]>;
   wide: boolean;
 }) {
-  const options = [
-    { id: null, name: m.drop_target_any(), locked: false },
-    ...devices.filter((device) => !device.current),
-  ];
   return (
     <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
       <legend className="label mb-2 p-0 text-ink-muted">{m.drop_target_label()}</legend>
       <div className={wide ? "flex flex-wrap gap-2" : "flex flex-col rounded-md bg-surface-raised"}>
-        {options.map((option) => {
-          const checked = compose.target === option.id;
-          return (
-            <label
-              key={option.id ?? ""}
-              className={
-                wide
-                  ? "gd-button gd-button--secondary gd-choice label"
-                  : "gd-choice body flex min-h-12 items-center gap-3 border-b border-border px-4 last:border-b-0"
-              }
-            >
-              <input
-                type="radio"
-                name="target"
-                className="accent-accent"
-                checked={checked}
-                onChange={() => compose.setTarget(option.id)}
-              />
-              <span>{option.name}</span>
-              {option.locked && <LockedBadge />}
-            </label>
-          );
-        })}
+        <Suspense fallback={<DeviceRowsSkeleton rows={1} />}>
+          <TargetOptions compose={compose} devices={devices} wide={wide} />
+        </Suspense>
       </div>
     </fieldset>
   );
@@ -225,7 +237,7 @@ function TextInput({ compose }: { compose: Compose }) {
 
 type Props = {
   compose: Compose;
-  devices: readonly Device[];
+  devices: Promise<Device[]>;
   deviceName: string;
   wide: boolean;
   header?: ReactNode;
@@ -236,7 +248,7 @@ export function ComposePanel({ compose, devices, deviceName, wide, header }: Pro
   const targetName =
     compose.target === null
       ? m.drop_target_any()
-      : (devices.find((device) => device.id === compose.target)?.name ?? m.device_unknown());
+      : (use(devices).find((device) => device.id === compose.target)?.name ?? m.device_unknown());
   return (
     <>
       {header}

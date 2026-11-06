@@ -379,3 +379,11 @@
 .gd-alert--warning .gd-alert__icon {
   color: var(--warning);
 }
+
+/* Skeleton: a grey bar standing in for a line of a row that is still loading. */
+.gd-skeleton {
+  display: block;
+  height: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+}

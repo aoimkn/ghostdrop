@@ -29,6 +29,7 @@ import { type Entry, useDrops } from "~/app/ui/home/use-drops";
 import { Logo } from "~/app/ui/logo";
 import { BackHeader, Column } from "~/app/ui/page";
 import { TransferProgress } from "~/app/ui/progress";
+import { DropRowsSkeleton } from "~/app/ui/skeleton";
 import { useNow } from "~/app/ui/use-now";
 import { useOnline } from "~/app/ui/use-online";
 import { useUpdateWhenIdle } from "~/app/ui/update";
@@ -39,7 +40,7 @@ export const middleware: Route.MiddlewareFunction[] = [onlyAt("device")];
 
 export async function clientLoader() {
   const session = await requireReady();
-  return { device: session.device, devices: await listDevices() };
+  return { device: session.device, devices: listDevices() };
 }
 
 const WIDE = "(min-width: 768px)";
@@ -154,6 +155,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </span>
         )}
       </div>
+      {entries === null && <DropRowsSkeleton />}
       {entries?.length === 0 && (
         <p className="body m-0 rounded-md bg-surface-raised px-4 py-6 text-center text-ink-muted">
           {m.drop_pending_empty()}

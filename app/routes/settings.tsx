@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Suspense, use, useState } from "react";
 import { useNavigate, useRevalidator } from "react-router";
 
 import {
@@ -27,6 +27,7 @@ import { errorMessage, isCancelledByUser } from "~/app/ui/error-message";
 import { Field } from "~/app/ui/field";
 import { BackHeader, Column } from "~/app/ui/page";
 import { SignOutDialog } from "~/app/ui/sign-out-dialog";
+import { DeviceRowsSkeleton, LineSkeleton } from "~/app/ui/skeleton";
 
 import type { Route } from "./+types/settings";
 
@@ -36,12 +37,19 @@ export const middleware: Route.MiddlewareFunction[] = [onlyAt("device")];
 
 export async function clientLoader() {
   await requireReady();
-  const [devices, passkeys, drops] = await Promise.all([
-    listDevices(),
-    listPasskeys(),
-    listDrops(),
-  ]);
-  return { devices, passkeys, pendingDrops: drops.length };
+  const devices = listDevices();
+  const passkeys = listPasskeys();
+  return {
+    devices,
+    passkeys,
+    counts: Promise.all([passkeys, devices, listDrops()]).then(
+      ([passkeyList, deviceList, drops]) => ({
+        passkeys: passkeyList.length,
+        devices: deviceList.length,
+        pendingDrops: drops.length,
+      }),
+    ),
+  };
 }
 
 type Open =
@@ -52,8 +60,90 @@ type Open =
   | { kind: "delete-account" }
   | null;
 
+function DeviceRows({
+  devices,
+  onRename,
+  onRemove,
+}: {
+  devices: Promise<Device[]>;
+  onRename: (device: Device) => void;
+  onRemove: (device: Device) => void;
+}) {
+  const locale = getLocale();
+  return use(devices).map((device) => (
+    <div key={device.id} className="gd-device last:border-b-0">
+      <div className="gd-device__main">
+        <div className="gd-device__name body">
+          <span>{device.name}</span>
+          {device.current && <span className="gd-badge caption">{m.device_current()}</span>}
+          {device.locked && <LockedBadge />}
+        </div>
+        <div className="gd-device__since caption">
+          {m.device_added_at({ date: formatDate(locale, device.createdAt) })}
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          className="gd-button gd-button--subtle label min-h-11"
+          onClick={() => onRename(device)}
+        >
+          {m.device_rename()}
+        </button>
+        <button
+          type="button"
+          className="gd-button gd-button--subtle gd-button--destructive label min-h-11"
+          onClick={() => onRemove(device)}
+        >
+          {m.device_remove()}
+        </button>
+      </div>
+    </div>
+  ));
+}
+
+function PasskeyRows({
+  passkeys,
+  onRemove,
+}: {
+  passkeys: Promise<Passkey[]>;
+  onRemove: (passkey: Passkey) => void;
+}) {
+  const locale = getLocale();
+  return use(passkeys).map((passkey) => (
+    <div key={passkey.id} className="gd-device last:border-b-0">
+      <div className="gd-device__main">
+        <div className="caption text-ink-muted">
+          {m.passkey_created_at({ date: formatDate(locale, passkey.createdAt) })}
+        </div>
+        <div className="caption text-ink-muted">
+          {passkey.lastUsedAt === null
+            ? m.passkey_never_used()
+            : m.passkey_last_used_at({ date: formatDate(locale, passkey.lastUsedAt) })}
+        </div>
+      </div>
+      <button
+        type="button"
+        className="gd-button gd-button--subtle gd-button--destructive label min-h-11"
+        onClick={() => onRemove(passkey)}
+      >
+        {m.passkey_remove()}
+      </button>
+    </div>
+  ));
+}
+
+function AccountCounts({ counts }: { counts: Route.ComponentProps["loaderData"]["counts"] }) {
+  const { passkeys, devices, pendingDrops } = use(counts);
+  return (
+    <span className="mono text-ink-muted">
+      {m.passkey_count({ count: passkeys })} &middot; {m.device_count({ count: devices })} &middot;{" "}
+      {m.drop_pending_count({ count: pendingDrops })}
+    </span>
+  );
+}
+
 export default function Settings({ loaderData }: Route.ComponentProps) {
-  const { devices, passkeys, pendingDrops } = loaderData;
   const navigate = useNavigate();
   const revalidator = useRevalidator();
   const locale = getLocale();
@@ -96,67 +186,29 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
       <section className="flex flex-col gap-2">
         <h2 className="label m-0 text-ink-muted">{m.device_list_title()}</h2>
         <div className="rounded-md bg-surface-raised">
-          {devices.map((device) => (
-            <div key={device.id} className="gd-device last:border-b-0">
-              <div className="gd-device__main">
-                <div className="gd-device__name body">
-                  <span>{device.name}</span>
-                  {device.current && <span className="gd-badge caption">{m.device_current()}</span>}
-                  {device.locked && <LockedBadge />}
-                </div>
-                <div className="gd-device__since caption">
-                  {m.device_added_at({ date: formatDate(locale, device.createdAt) })}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  className="gd-button gd-button--subtle label min-h-11"
-                  onClick={() => {
-                    setNewName(device.name);
-                    setNameError(null);
-                    setOpen({ kind: "rename", device });
-                  }}
-                >
-                  {m.device_rename()}
-                </button>
-                <button
-                  type="button"
-                  className="gd-button gd-button--subtle gd-button--destructive label min-h-11"
-                  onClick={() => setOpen({ kind: "remove-device", device })}
-                >
-                  {m.device_remove()}
-                </button>
-              </div>
-            </div>
-          ))}
+          <Suspense fallback={<DeviceRowsSkeleton rows={2} />}>
+            <DeviceRows
+              devices={loaderData.devices}
+              onRename={(device) => {
+                setNewName(device.name);
+                setNameError(null);
+                setOpen({ kind: "rename", device });
+              }}
+              onRemove={(device) => setOpen({ kind: "remove-device", device })}
+            />
+          </Suspense>
         </div>
       </section>
 
       <section className="flex flex-col gap-2">
         <h2 className="label m-0 text-ink-muted">{m.passkey_list_title()}</h2>
         <div className="rounded-md bg-surface-raised">
-          {passkeys.map((passkey) => (
-            <div key={passkey.id} className="gd-device last:border-b-0">
-              <div className="gd-device__main">
-                <div className="caption text-ink-muted">
-                  {m.passkey_created_at({ date: formatDate(locale, passkey.createdAt) })}
-                </div>
-                <div className="caption text-ink-muted">
-                  {passkey.lastUsedAt === null
-                    ? m.passkey_never_used()
-                    : m.passkey_last_used_at({ date: formatDate(locale, passkey.lastUsedAt) })}
-                </div>
-              </div>
-              <button
-                type="button"
-                className="gd-button gd-button--subtle gd-button--destructive label min-h-11"
-                onClick={() => setOpen({ kind: "remove-passkey", passkey })}
-              >
-                {m.passkey_remove()}
-              </button>
-            </div>
-          ))}
+          <Suspense fallback={<DeviceRowsSkeleton rows={1} />}>
+            <PasskeyRows
+              passkeys={loaderData.passkeys}
+              onRemove={(passkey) => setOpen({ kind: "remove-passkey", passkey })}
+            />
+          </Suspense>
         </div>
         <button
           type="button"
@@ -278,11 +330,9 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
           onCancel={() => setOpen(null)}
           onConfirm={() => void run(deleteAccount, toSignIn)}
         >
-          <span className="mono text-ink-muted">
-            {m.passkey_count({ count: passkeys.length })} &middot;{" "}
-            {m.device_count({ count: devices.length })} &middot;{" "}
-            {m.drop_pending_count({ count: pendingDrops })}
-          </span>
+          <Suspense fallback={<LineSkeleton />}>
+            <AccountCounts counts={loaderData.counts} />
+          </Suspense>
         </Dialog>
       )}
     </Column>
