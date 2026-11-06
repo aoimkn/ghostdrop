@@ -13,9 +13,7 @@ export function ErrorScreen({ notFound = false }: { notFound?: boolean }) {
           <h1 className="title m-0">
             {notFound ? m.error_not_found_title() : m.error_unknown_title()}
           </h1>
-          <p className="body m-0 text-ink-muted">
-            {notFound ? m.error_not_found_body() : m.error_unknown_body()}
-          </p>
+          {!notFound && <p className="body m-0 text-ink-muted">{m.error_unknown_body()}</p>}
         </div>
       </div>
       <Link to="/" reloadDocument className="gd-button gd-button--primary label min-h-12">

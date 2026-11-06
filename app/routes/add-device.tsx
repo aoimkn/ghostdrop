@@ -67,7 +67,6 @@ export default function AddDevice() {
         <div className="flex flex-col gap-2">
           {alert !== null && <Alert tone="warning">{alert}</Alert>}
           <h1 className="title m-0">{m.device_add_title()}</h1>
-          <p className="body m-0 text-ink-muted">{m.device_add_body()}</p>
         </div>
         <Field
           label={m.passphrase_label()}

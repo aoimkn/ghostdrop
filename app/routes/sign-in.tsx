@@ -50,7 +50,6 @@ export default function SignIn() {
         <Link to="/sign-up" className="gd-button gd-button--secondary label min-h-12">
           {m.account_sign_up()}
         </Link>
-        <p className="caption mt-2 mb-0 text-center text-ink-muted">{m.account_passkey_hint()}</p>
       </div>
     </Column>
   );

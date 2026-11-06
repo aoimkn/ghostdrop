@@ -209,7 +209,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                       <DropRoute drop={received.drop} />
                       <span className="gd-badge gd-badge--signal caption">{m.drop_received()}</span>
                     </div>
-                    <div className="gd-drop__expiry caption">{m.drop_received_body()}</div>
                   </div>
                   <ReceivedContent items={received.items} inset />
                   <div className="gd-drop__actions justify-end">
@@ -252,9 +251,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         </BackHeader>
         {received ? (
           <>
-            <div className="flex items-center gap-2">
+            <div className="flex">
               <span className="gd-badge gd-badge--signal caption">{m.drop_received()}</span>
-              <span className="caption text-ink-muted">{m.drop_received_body()}</span>
             </div>
             <ReceivedContent items={received.items} />
           </>
