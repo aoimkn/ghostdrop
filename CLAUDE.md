@@ -4,6 +4,8 @@
 - Don't write comments by default. Add one only when the code alone can't convey why — e.g. a non-obvious constraint, a workaround, or a choice a reader would otherwise change.
 - Never write user-facing copy. When the UI needs text, add a message key with an empty message in every locale; the owner writes the messages.
 - When you hit a problem you can't fix at its root — or the fix would mean a workaround, deviating from `SPEC.md`, or `SPEC.md` is ambiguous — stop and report: what happened, the cause (or your best guess), and the options.
+- When an encryption format changes, bump its version byte. Keep reading every passphrase parameter version still stored by existing accounts; drop formats may stop reading a version once drops of it have expired.
+- Durable Object storage persists across deploys. Change an existing table with a migration step, not by editing its `CREATE TABLE`.
 
 ## SPEC.md
 
