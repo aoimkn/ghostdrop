@@ -15,4 +15,7 @@ export default defineConfig({
     babel({ presets: [reactCompilerPreset()] }),
   ],
   resolve: { tsconfigPaths: true },
+  // Rolldown does not keep module execution order across chunks by default, which runs
+  // tsyringe's polyfill check (via @simplewebauthn/server) before reflect-metadata loads.
+  environments: { ssr: { build: { rolldownOptions: { output: { strictExecutionOrder: true } } } } },
 });
