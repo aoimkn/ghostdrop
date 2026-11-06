@@ -54,8 +54,10 @@ The account, its devices, and for each drop: the sending device, the target devi
 
 - Signing up and signing in use a passkey. No password.
 - ghostdrop is designed around synced passkeys: one registration makes the passkey usable on every device where the owner's credential manager syncs. No particular credential manager is assumed.
-- An account can have multiple passkeys. While signed in, the owner can add a passkey (e.g. when moving to another credential manager) and remove one, as long as at least one remains.
+- An account can have multiple passkeys. While signed in, the owner can add a passkey (e.g. when moving to another credential manager) after confirming with an existing one, and remove one, as long as at least one remains.
 - There is no account recovery. An owner who loses access to all of their passkeys signs up for a new account.
+
+Rationale: only adding a passkey asks for confirmation because an added passkey grants lasting access. Other changes made from a signed-in device, such as removing a passkey or a device, at worst disrupt the owner, who notices.
 
 Rationale: recovery would need a second identity channel such as email, which ghostdrop otherwise has no reason to collect. An account holds nothing worth recovering beyond pending drops, which expire shortly anyway.
 
@@ -64,15 +66,16 @@ Rationale: recovery would need a second identity channel such as email, which gh
 - At sign-up the owner chooses a passphrase. It is the source of the encryption key and never leaves the owner's devices.
 - The owner is expected to keep it in their credential manager alongside the passkey.
 - Each new device asks for the passphrase once. A wrong passphrase is detected immediately.
-- Changing the passphrase requires every device to enter the new one. All pending drops are burned.
+- Changing the passphrase burns all pending drops. Other devices stay on the account but cannot send or receive until the new passphrase is entered on them.
 - A forgotten passphrase can be replaced with a new one. Only pending drops are lost, since nothing else is stored.
 
 Rationale: the WebAuthn PRF extension could derive the key from the passkey itself and remove the passphrase. It is not used because some credential managers do not return PRF output for the passkeys they store, and ghostdrop must work with any synced passkey.
 
 ### Devices
 
-- A device is added to the account when the owner signs in and enters the passphrase on it.
-- Devices have a name, shown when choosing a target and on pending drops. The owner can rename a device and remove it from the account. Removing a device signs it out immediately.
+- A device is added to the account when the owner signs in and enters the passphrase and a name on it.
+- Device names are unique within the account and are shown when choosing a target and on pending drops. The owner can rename a device and remove it from the account. Removing a device signs it out immediately.
+- A device is removed when it signs out or its session expires. Signing in again in the same browser adds it as a new device.
 
 ### Account deletion
 
@@ -141,4 +144,5 @@ Rationale: these three are the only types the Clipboard API requires browsers to
 | Maximum drop size                 | 100 MB                        |
 | Maximum pending drops per account | TBD                           |
 | Minimum passphrase length         | 15 characters                 |
+| Maximum device name length        | TBD                           |
 | Session lifetime                  | 30 days, extended on each use |
