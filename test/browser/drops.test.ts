@@ -42,3 +42,14 @@ test("a receive that fails keeps the drop so it can be tried again", async ({ br
   await desktop.page.getByRole("button", { name: "[common_retry]" }).click();
   await expect(desktop.page.getByText("Retry me.")).toBeVisible();
 });
+
+test("text being written can be removed from the drop", async ({ browser }) => {
+  const desktop = await open(browser, DESKTOP);
+  await signUp(desktop.page, "MacBook Air");
+
+  await desktop.page.getByRole("button", { name: "[drop_write_text]" }).click();
+  await desktop.page.getByLabel("[drop_text_label]").fill("Never mind.");
+  await desktop.page.getByRole("button", { name: "[drop_remove_item]" }).click();
+  await expect(desktop.page.getByLabel("[drop_text_label]")).toHaveCount(0);
+  await expect(desktop.page.getByRole("button", { name: "[drop_send]" })).toBeDisabled();
+});

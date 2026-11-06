@@ -1,4 +1,4 @@
-import { Suspense, use, useEffect, useRef, useState, type ReactNode } from "react";
+import { Suspense, use, useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 import type { Device } from "~/app/lib/account.client";
 import { groupEntries, type Item, totalSize } from "~/app/lib/content";
@@ -200,17 +200,30 @@ function Progress({
 
 function TextInput({ compose }: { compose: Compose }) {
   const ref = useRef<HTMLTextAreaElement>(null);
+  const id = useId();
   useEffect(() => ref.current?.focus(), []);
   return (
-    <label className="gd-field">
-      <span className="gd-field__label label">{m.drop_text_label()}</span>
+    <div className="gd-field">
+      <div className="flex items-center justify-between gap-2">
+        <label className="gd-field__label label" htmlFor={id}>
+          {m.drop_text_label()}
+        </label>
+        <button
+          type="button"
+          className="gd-button gd-button--subtle label min-h-11"
+          onClick={compose.stopWriting}
+        >
+          {m.drop_remove_item()}
+        </button>
+      </div>
       <textarea
         ref={ref}
+        id={id}
         className="gd-field__input body min-h-32 py-2"
         value={compose.text}
         onChange={(event) => compose.setText(event.target.value)}
       />
-    </label>
+    </div>
   );
 }
 

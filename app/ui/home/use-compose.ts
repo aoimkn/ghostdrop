@@ -108,6 +108,10 @@ export function useCompose({ onSent, onLocked }: { onSent: () => void; onLocked:
     addTransfer,
     paste,
     startWriting: () => setWriting(true),
+    stopWriting: () => {
+      setWriting(false);
+      setText("");
+    },
     setText,
     remove: (removed: readonly Item[]) =>
       setItems((current) => current.filter((item) => !removed.includes(item))),
