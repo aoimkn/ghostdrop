@@ -256,7 +256,7 @@ describe("limits", () => {
     expect((await create(first, [MAX_DROP_BYTES])).status).toBe(201);
   });
 
-  it("rejects more than 1,000 items", async () => {
+  it("rejects more than 100 items", async () => {
     const { first } = await account();
     const response = await create(
       first,

@@ -115,7 +115,7 @@ A pending drop that is not received or deleted within the expiry period is burne
 Existing content — anything that already exists on the device:
 
 - the clipboard (paste)
-- files and folders in storage (file or folder picker, drag and drop)
+- files in storage (file picker, drag and drop)
 - content in other apps (drag and drop)
 
 New content — created within ghostdrop for the drop:
@@ -128,6 +128,7 @@ Every item is carried as-is: original MIME type and bytes, no conversion.
 ### Output
 
 - Items of type `text/plain`, `text/html` or `image/png` can be written to the receiving device's clipboard.
+- Items read together from the clipboard as alternative formats of the same content (e.g. rich text with a plain-text fallback) are written back to the clipboard together.
 - All other items are delivered as a download or through the share sheet.
 
 Rationale: these three are the only types the Clipboard API requires browsers to support for writing. Others (e.g. `image/jpeg`) are rejected by some browsers, so they are not offered as clipboard targets.
@@ -145,7 +146,7 @@ Rationale: these three are the only types the Clipboard API requires browsers to
 | Expiry period                     | 24 hours                      |
 | Maximum drop size                 | 100 MiB                       |
 | Maximum pending drops per account | 10                            |
-| Maximum items per drop            | 1,000                         |
+| Maximum items per drop            | 100                           |
 | Upload timeout                    | 1 hour                        |
 | Minimum passphrase length         | 15 characters                 |
 | Maximum device name length        | TBD                           |
