@@ -1,6 +1,5 @@
-import { GearSixIcon } from "@phosphor-icons/react/dist/csr/GearSix";
 import { useEffect, useEffectEvent, useState, useSyncExternalStore } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 
 import { onlyAt } from "~/app/.server/stage";
 import { listDevices } from "~/app/lib/account.client";
@@ -19,14 +18,13 @@ import { formatSize } from "~/app/ui/format";
 import { requireReady } from "~/app/ui/gate.client";
 import { m } from "~/app/paraglide/messages";
 import { Alert } from "~/app/ui/alert";
+import { AppHeader } from "~/app/ui/app-header";
 import { errorMessage } from "~/app/ui/error-message";
-import { DeviceName } from "~/app/ui/device";
 import { ComposePanel, Sources } from "~/app/ui/home/compose";
 import { DropRow, Route as DropRoute } from "~/app/ui/home/drop-row";
 import { ReceivedContent } from "~/app/ui/home/received";
 import { useCompose } from "~/app/ui/home/use-compose";
 import { type Entry, useDrops } from "~/app/ui/home/use-drops";
-import { Logo } from "~/app/ui/logo";
 import { BackHeader, Column } from "~/app/ui/page";
 import { TransferProgress } from "~/app/ui/progress";
 import { DropRowsSkeleton } from "~/app/ui/skeleton";
@@ -127,23 +125,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     await refresh();
   };
 
-  const header = (
-    <header className="flex min-h-11 flex-wrap items-center justify-between gap-2">
-      <Logo />
-      <div className="flex items-center gap-4">
-        <span className="label inline-flex items-center gap-1">
-          <DeviceName name={device.name} />
-        </span>
-        <Link
-          to="/settings"
-          className="gd-button gd-button--subtle label min-h-11 min-w-11"
-          aria-label={m.account_settings()}
-        >
-          <GearSixIcon size={24} aria-hidden />
-        </Link>
-      </div>
-    </header>
-  );
+  const header = <AppHeader deviceName={device.name} />;
 
   const pending = (
     <section className="flex min-w-0 flex-col gap-2">

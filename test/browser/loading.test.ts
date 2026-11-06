@@ -29,13 +29,14 @@ test("lists show skeleton rows while they load, and keep their rows while they r
   await expect(page.getByText("[drop_pending_empty]")).toBeVisible();
 
   await page.goto("/settings");
-  await expect(page.getByText("iPhone")).toBeVisible();
+  const deviceRows = page.locator(".gd-device");
+  await expect(deviceRows.getByText("iPhone")).toBeVisible();
   const devices = await hold(page, "**/api/devices");
   await page.getByRole("button", { name: "[device_rename]" }).click();
   await page.getByLabel("[device_name_label]").fill("iPhone 2");
   await page.getByRole("button", { name: "[device_rename_confirm]" }).click();
-  await expect(page.getByText("iPhone", { exact: true })).toBeVisible();
+  await expect(deviceRows.getByText("iPhone", { exact: true })).toBeVisible();
   await expect(page.locator(".gd-skeleton")).toHaveCount(0);
   devices();
-  await expect(page.getByText("iPhone 2")).toBeVisible();
+  await expect(deviceRows.getByText("iPhone 2")).toBeVisible();
 });

@@ -55,7 +55,7 @@ export default function Unlock({ loaderData }: Route.ComponentProps) {
     <Column spread>
       <form
         id="unlock"
-        className="flex flex-col gap-6 pt-12"
+        className="flex flex-col gap-6 pt-12 md:pt-0"
         onSubmit={(event) => {
           event.preventDefault();
           if (passphrase) void submit();

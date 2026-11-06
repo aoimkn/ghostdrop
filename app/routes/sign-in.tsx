@@ -33,7 +33,7 @@ export default function SignIn() {
 
   return (
     <Column spread>
-      <div className="pt-30">
+      <div className="pt-30 md:pt-0">
         <Logo className="display text-[40px]" />
       </div>
       <div className="flex flex-col gap-2">

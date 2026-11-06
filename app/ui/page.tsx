@@ -6,10 +6,12 @@ import { m } from "~/app/paraglide/messages";
 
 export function Column({ spread = false, children }: { spread?: boolean; children: ReactNode }) {
   return (
-    <main
-      className={`mx-auto flex min-h-dvh w-full max-w-110 flex-col gap-6 px-4 ${spread ? "justify-between py-6" : "pt-4 pb-6"}`}
-    >
-      {children}
+    <main className="flex min-h-dvh w-full justify-center md:items-center md:px-4 md:py-12">
+      <div
+        className={`flex min-h-dvh w-full max-w-110 flex-col gap-6 px-4 md:min-h-0 md:rounded-lg md:bg-surface-raised md:p-8 ${spread ? "justify-between py-6" : "pt-4 pb-6"}`}
+      >
+        {children}
+      </div>
     </main>
   );
 }

@@ -58,7 +58,7 @@ export default function AddDevice() {
     <Column spread>
       <form
         id="add-device"
-        className="flex flex-col gap-6 pt-12"
+        className="flex flex-col gap-6 pt-12 md:pt-0"
         onSubmit={(event) => {
           event.preventDefault();
           if (passphrase && isValidDeviceName(name)) void submit();

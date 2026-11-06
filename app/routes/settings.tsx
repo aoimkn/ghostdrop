@@ -20,10 +20,11 @@ import { requireReady } from "~/app/ui/gate.client";
 import { m } from "~/app/paraglide/messages";
 import { getLocale, locales, setLocale } from "~/app/paraglide/runtime";
 import { Alert } from "~/app/ui/alert";
+import { AppHeader } from "~/app/ui/app-header";
 import { Dialog } from "~/app/ui/dialog";
 import { errorMessage, isCancelledByUser } from "~/app/ui/error-message";
 import { Field } from "~/app/ui/field";
-import { BackHeader, Column } from "~/app/ui/page";
+import { BackHeader } from "~/app/ui/page";
 import { AccountCounts } from "~/app/ui/settings/account-counts";
 import { DeviceRows } from "~/app/ui/settings/device-rows";
 import { PasskeyRows } from "~/app/ui/settings/passkey-rows";
@@ -32,15 +33,20 @@ import { ListRowsSkeleton, LineSkeleton } from "~/app/ui/skeleton";
 
 import type { Route } from "./+types/settings";
 
+const SECTION = "flex flex-col gap-2 md:gap-4 md:rounded-lg md:bg-surface-raised md:p-6";
+const LIST = "rounded-md bg-surface-raised md:-mx-4 md:bg-transparent";
+const ACTION = "gd-button gd-button--secondary label min-h-11 md:self-start";
+
 const LANGUAGE_NAMES: Record<string, string> = { ja: "日本語", en: "English" };
 
 export const middleware: Route.MiddlewareFunction[] = [onlyAt("ready")];
 
 export async function clientLoader() {
-  await requireReady();
+  const session = await requireReady();
   const devices = listDevices();
   const passkeys = listPasskeys();
   return {
+    deviceName: session.device.name,
     devices,
     passkeys,
     counts: Promise.all([passkeys, devices, listDrops()]).then(
@@ -95,164 +101,170 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
   };
 
   return (
-    <Column>
-      <BackHeader to="/">
-        <h1 className="title m-0">{m.account_settings()}</h1>
-      </BackHeader>
-      {alert !== null && <Alert tone="danger">{alert}</Alert>}
-
-      <section className="flex flex-col gap-2">
-        <h2 className="label m-0 text-ink-muted">{m.device_list_title()}</h2>
-        <div className="rounded-md bg-surface-raised">
-          <Suspense fallback={<ListRowsSkeleton rows={2} />}>
-            <DeviceRows
-              devices={loaderData.devices}
-              onRename={(device) => {
-                setNewName(device.name);
-                setNameError(null);
-                setOpen({ kind: "rename", device });
-              }}
-              onRemove={(device) => setOpen({ kind: "remove-device", device })}
-            />
-          </Suspense>
+    <main className="min-h-dvh md:px-[max(16px,3vw)] md:py-6">
+      <div className="mx-auto flex max-w-280 flex-col gap-6">
+        <div className="hidden md:block">
+          <AppHeader deviceName={loaderData.deviceName} />
         </div>
-      </section>
+        <div className="mx-auto flex min-h-dvh w-full max-w-110 flex-col gap-6 px-4 pt-4 pb-6 md:min-h-0 md:max-w-160 md:p-0">
+          <BackHeader to="/">
+            <h1 className="title m-0">{m.account_settings()}</h1>
+          </BackHeader>
+          {alert !== null && <Alert tone="danger">{alert}</Alert>}
 
-      <section className="flex flex-col gap-2">
-        <h2 className="label m-0 text-ink-muted">{m.passkey_list_title()}</h2>
-        <div className="rounded-md bg-surface-raised">
-          <Suspense fallback={<ListRowsSkeleton rows={1} />}>
-            <PasskeyRows
-              passkeys={loaderData.passkeys}
-              onRemove={(passkey) => setOpen({ kind: "remove-passkey", passkey })}
-            />
-          </Suspense>
-        </div>
-        <button
-          type="button"
-          className="gd-button gd-button--secondary label min-h-11"
-          disabled={busy}
-          onClick={() => void run(addPasskey)}
-        >
-          {m.passkey_add()}
-        </button>
-      </section>
-
-      <section className="flex flex-col gap-2">
-        <h2 className="label m-0 text-ink-muted">{m.passphrase_title()}</h2>
-        <button
-          type="button"
-          className="gd-button gd-button--secondary label min-h-11"
-          onClick={() => void navigate("/settings/passphrase")}
-        >
-          {m.passphrase_replace()}
-        </button>
-      </section>
-
-      <section className="flex flex-col gap-2">
-        <h2 className="label m-0 text-ink-muted">{m.account_language_label()}</h2>
-        <fieldset className="m-0 border-0 p-0">
-          <legend className="sr-only">{m.account_language_label()}</legend>
-          <div className="grid grid-cols-2 gap-2">
-            {locales.map((candidate) => (
-              <label
-                key={candidate}
-                className="gd-button gd-button--secondary gd-choice label min-h-11"
-              >
-                <input
-                  type="radio"
-                  name="language"
-                  className="accent-accent"
-                  checked={candidate === locale}
-                  onChange={() => void setLocale(candidate)}
+          <section className={SECTION}>
+            <h2 className="label m-0 text-ink-muted">{m.device_list_title()}</h2>
+            <div className={LIST}>
+              <Suspense fallback={<ListRowsSkeleton rows={2} />}>
+                <DeviceRows
+                  devices={loaderData.devices}
+                  onRename={(device) => {
+                    setNewName(device.name);
+                    setNameError(null);
+                    setOpen({ kind: "rename", device });
+                  }}
+                  onRemove={(device) => setOpen({ kind: "remove-device", device })}
                 />
-                <span lang={candidate}>{LANGUAGE_NAMES[candidate] ?? candidate}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-      </section>
+              </Suspense>
+            </div>
+          </section>
 
-      <section className="flex flex-col gap-2">
-        <h2 className="label m-0 text-ink-muted">{m.account_title()}</h2>
-        <button
-          type="button"
-          className="gd-button gd-button--secondary label min-h-11"
-          onClick={() => setOpen({ kind: "sign-out" })}
-        >
-          {m.account_sign_out()}
-        </button>
-        <button
-          type="button"
-          className="gd-button gd-button--subtle gd-button--destructive label min-h-11"
-          onClick={() => setOpen({ kind: "delete-account" })}
-        >
-          {m.account_delete()}
-        </button>
-      </section>
+          <section className={SECTION}>
+            <h2 className="label m-0 text-ink-muted">{m.passkey_list_title()}</h2>
+            <div className={LIST}>
+              <Suspense fallback={<ListRowsSkeleton rows={1} />}>
+                <PasskeyRows
+                  passkeys={loaderData.passkeys}
+                  onRemove={(passkey) => setOpen({ kind: "remove-passkey", passkey })}
+                />
+              </Suspense>
+            </div>
+            <button
+              type="button"
+              className={ACTION}
+              disabled={busy}
+              onClick={() => void run(addPasskey)}
+            >
+              {m.passkey_add()}
+            </button>
+          </section>
 
-      {open?.kind === "rename" && (
-        <Dialog
-          title={m.device_rename_title()}
-          confirmLabel={m.device_rename_confirm()}
-          busy={busy}
-          onCancel={() => setOpen(null)}
-          onConfirm={() => {
-            if (isValidDeviceName(newName)) {
-              void run(() => renameDevice(open.device.id, newName));
-            }
-          }}
-        >
-          <Field
-            label={m.device_name_label()}
-            hint={m.device_name_hint({ max: MAX_DEVICE_NAME_LENGTH })}
-            error={nameError}
-            autoComplete="off"
-            value={newName}
-            onChange={(event) => setNewName(event.target.value)}
-          />
-        </Dialog>
-      )}
-      {open?.kind === "remove-device" && (
-        <Dialog
-          title={m.device_remove_title({ name: open.device.name })}
-          body={m.device_remove_body()}
-          confirmLabel={m.device_remove_confirm()}
-          danger
-          busy={busy}
-          onCancel={() => setOpen(null)}
-          onConfirm={() =>
-            void run(() => removeDevice(open.device.id), open.device.current ? toSignIn : undefined)
-          }
-        />
-      )}
-      {open?.kind === "remove-passkey" && (
-        <Dialog
-          title={m.passkey_remove_title()}
-          body={m.passkey_remove_body()}
-          confirmLabel={m.passkey_remove_confirm()}
-          danger
-          busy={busy}
-          onCancel={() => setOpen(null)}
-          onConfirm={() => void run(() => removePasskey(open.passkey.id))}
-        />
-      )}
-      {open?.kind === "sign-out" && <SignOutDialog onCancel={() => setOpen(null)} />}
-      {open?.kind === "delete-account" && (
-        <Dialog
-          title={m.account_delete_title()}
-          body={m.account_delete_body()}
-          confirmLabel={m.account_delete_confirm()}
-          danger
-          busy={busy}
-          onCancel={() => setOpen(null)}
-          onConfirm={() => void run(deleteAccount, toSignIn)}
-        >
-          <Suspense fallback={<LineSkeleton />}>
-            <AccountCounts counts={loaderData.counts} />
-          </Suspense>
-        </Dialog>
-      )}
-    </Column>
+          <section className={SECTION}>
+            <h2 className="label m-0 text-ink-muted">{m.passphrase_title()}</h2>
+            <button
+              type="button"
+              className={ACTION}
+              onClick={() => void navigate("/settings/passphrase")}
+            >
+              {m.passphrase_replace()}
+            </button>
+          </section>
+
+          <section className={SECTION}>
+            <h2 className="label m-0 text-ink-muted">{m.account_language_label()}</h2>
+            <fieldset className="m-0 border-0 p-0">
+              <legend className="sr-only">{m.account_language_label()}</legend>
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-[repeat(2,160px)]">
+                {locales.map((candidate) => (
+                  <label
+                    key={candidate}
+                    className="gd-button gd-button--secondary gd-choice label min-h-11"
+                  >
+                    <input
+                      type="radio"
+                      name="language"
+                      className="accent-accent"
+                      checked={candidate === locale}
+                      onChange={() => void setLocale(candidate)}
+                    />
+                    <span lang={candidate}>{LANGUAGE_NAMES[candidate] ?? candidate}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          </section>
+
+          <section className={SECTION}>
+            <h2 className="label m-0 text-ink-muted">{m.account_title()}</h2>
+            <button type="button" className={ACTION} onClick={() => setOpen({ kind: "sign-out" })}>
+              {m.account_sign_out()}
+            </button>
+            <button
+              type="button"
+              className="gd-button gd-button--subtle gd-button--destructive label min-h-11 md:self-start"
+              onClick={() => setOpen({ kind: "delete-account" })}
+            >
+              {m.account_delete()}
+            </button>
+          </section>
+
+          {open?.kind === "rename" && (
+            <Dialog
+              title={m.device_rename_title()}
+              confirmLabel={m.device_rename_confirm()}
+              busy={busy}
+              onCancel={() => setOpen(null)}
+              onConfirm={() => {
+                if (isValidDeviceName(newName)) {
+                  void run(() => renameDevice(open.device.id, newName));
+                }
+              }}
+            >
+              <Field
+                label={m.device_name_label()}
+                hint={m.device_name_hint({ max: MAX_DEVICE_NAME_LENGTH })}
+                error={nameError}
+                autoComplete="off"
+                value={newName}
+                onChange={(event) => setNewName(event.target.value)}
+              />
+            </Dialog>
+          )}
+          {open?.kind === "remove-device" && (
+            <Dialog
+              title={m.device_remove_title({ name: open.device.name })}
+              body={m.device_remove_body()}
+              confirmLabel={m.device_remove_confirm()}
+              danger
+              busy={busy}
+              onCancel={() => setOpen(null)}
+              onConfirm={() =>
+                void run(
+                  () => removeDevice(open.device.id),
+                  open.device.current ? toSignIn : undefined,
+                )
+              }
+            />
+          )}
+          {open?.kind === "remove-passkey" && (
+            <Dialog
+              title={m.passkey_remove_title()}
+              body={m.passkey_remove_body()}
+              confirmLabel={m.passkey_remove_confirm()}
+              danger
+              busy={busy}
+              onCancel={() => setOpen(null)}
+              onConfirm={() => void run(() => removePasskey(open.passkey.id))}
+            />
+          )}
+          {open?.kind === "sign-out" && <SignOutDialog onCancel={() => setOpen(null)} />}
+          {open?.kind === "delete-account" && (
+            <Dialog
+              title={m.account_delete_title()}
+              body={m.account_delete_body()}
+              confirmLabel={m.account_delete_confirm()}
+              danger
+              busy={busy}
+              onCancel={() => setOpen(null)}
+              onConfirm={() => void run(deleteAccount, toSignIn)}
+            >
+              <Suspense fallback={<LineSkeleton />}>
+                <AccountCounts counts={loaderData.counts} />
+              </Suspense>
+            </Dialog>
+          )}
+        </div>
+      </div>
+    </main>
   );
 }

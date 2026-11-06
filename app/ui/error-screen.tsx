@@ -7,7 +7,7 @@ import { Column } from "~/app/ui/page";
 export function ErrorScreen({ notFound = false }: { notFound?: boolean }) {
   return (
     <Column spread>
-      <div className="flex flex-col gap-6 pt-30">
+      <div className="flex flex-col gap-6 pt-30 md:pt-0">
         <Logo className="display text-[40px]" />
         <div className="flex flex-col gap-2">
           <h1 className="title m-0">
