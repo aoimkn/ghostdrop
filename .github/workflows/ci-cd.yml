@@ -28,7 +28,6 @@ jobs:
           name: playwright-traces
           path: test-results/
           if-no-files-found: ignore
-      - run: pnpm build
 
   deploy:
     needs: check

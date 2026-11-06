@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   isRouteErrorResponse,
   type LinksFunction,
@@ -14,7 +15,6 @@ import { paraglideMiddleware } from "./paraglide/server";
 import { ErrorScreen } from "./ui/error-screen";
 import { registerServiceWorker, useUpdateOnNavigation } from "./ui/update";
 import "./app.css";
-import { useEffect } from "react";
 
 import type { Route } from "./+types/root";
 
