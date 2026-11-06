@@ -29,6 +29,8 @@ type Props = {
   size: number;
   fresh: boolean;
   receivable: boolean;
+  receiveBlocked: boolean;
+  deleting: boolean;
   receiving: { progress: number; failed: boolean } | null;
   stacked: boolean;
   now: number;
@@ -42,6 +44,8 @@ export function DropRow({
   size,
   fresh,
   receivable,
+  receiveBlocked,
+  deleting,
   receiving,
   stacked,
   now,
@@ -82,6 +86,7 @@ export function DropRow({
             <button
               type="button"
               className={`gd-button gd-button--primary label min-h-11 ${stacked ? "flex-1" : ""}`}
+              disabled={receiveBlocked || deleting}
               onClick={onReceive}
             >
               {receiving?.failed === true ? m.common_retry() : m.drop_receive()}
@@ -90,6 +95,8 @@ export function DropRow({
           <button
             type="button"
             className="gd-button gd-button--subtle gd-button--destructive label min-h-11"
+            disabled={deleting}
+            aria-busy={deleting || undefined}
             onClick={onDelete}
           >
             {m.drop_delete()}

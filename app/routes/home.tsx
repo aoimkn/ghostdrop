@@ -3,6 +3,7 @@ import { useEffect, useEffectEvent, useState, useSyncExternalStore } from "react
 import { Link, useNavigate } from "react-router";
 
 import { listDevices } from "~/app/lib/account.client";
+import { ApiError } from "~/app/lib/api.client";
 import { type Item, totalSize } from "~/app/lib/content";
 import { MAX_PENDING_DROPS } from "~/app/lib/drop-format";
 import {
@@ -17,6 +18,7 @@ import { formatSize } from "~/app/ui/format";
 import { requireReady } from "~/app/ui/gate.client";
 import { m } from "~/app/paraglide/messages";
 import { Alert } from "~/app/ui/alert";
+import { errorMessage } from "~/app/ui/error-message";
 import { DeviceName } from "~/app/ui/device";
 import { ComposePanel, Sources } from "~/app/ui/home/compose";
 import { DropRow, Route as DropRoute } from "~/app/ui/home/drop-row";
@@ -67,6 +69,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const offline = !online || !connected;
   const [receiving, setReceiving] = useState<Receiving | null>(null);
   const [received, setReceived] = useState<Received | null>(null);
+  const [deleting, setDeleting] = useState<ReadonlySet<string>>(new Set());
+  const [alert, setAlert] = useState<string | null>(null);
   const toUnlock = () => void navigate("/unlock");
   const compose = useCompose({ onSent: () => void refresh(), onLocked: toUnlock });
   useUpdateWhenIdle(!compose.open && receiving === null && received === null);
@@ -109,8 +113,17 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   };
 
   const remove = async (entry: Entry) => {
-    if (receiving?.entry.drop.id === entry.drop.id) setReceiving(null);
-    await deleteDrop(entry.drop.id);
+    const { id } = entry.drop;
+    setDeleting((current) => new Set(current).add(id));
+    setAlert(null);
+    if (receiving?.entry.drop.id === id) setReceiving(null);
+    try {
+      await deleteDrop(id);
+    } catch (error) {
+      // Gone already: received elsewhere, deleted elsewhere or expired.
+      if (!(error instanceof ApiError && error.code === "not-found")) setAlert(errorMessage(error));
+    }
+    setDeleting((current) => new Set([...current].filter((other) => other !== id)));
     await refresh();
   };
 
@@ -155,6 +168,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           size={entry.size}
           fresh={entry.fresh}
           receivable={isReceivable(entry.drop, device.id)}
+          receiveBlocked={receiving !== null && !receiving.failed}
+          deleting={deleting.has(entry.drop.id)}
           receiving={
             wide && receiving?.entry.drop.id === entry.drop.id
               ? { progress: receiving.progress, failed: receiving.failed }
@@ -174,6 +189,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       <main className="min-h-dvh px-[max(16px,3vw)] py-6">
         <div className="mx-auto flex max-w-[1120px] flex-col gap-6">
           {header}
+          {alert !== null && <Alert tone="danger">{alert}</Alert>}
           {offline && (
             <Alert tone="warning" quiet>
               {m.common_offline()}
@@ -292,6 +308,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   return (
     <Column>
       {header}
+      {alert !== null && <Alert tone="danger">{alert}</Alert>}
       {offline && (
         <Alert tone="warning" quiet>
           {m.common_offline()}
