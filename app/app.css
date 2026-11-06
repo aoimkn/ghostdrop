@@ -22,6 +22,10 @@
 }
 
 @layer base {
+  html {
+    word-break: auto-phrase;
+    text-wrap: pretty;
+  }
   body {
     background: var(--surface);
     color: var(--ink);
