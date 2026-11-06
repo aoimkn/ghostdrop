@@ -152,8 +152,8 @@ function Targets({
               key={option.id ?? ""}
               className={
                 wide
-                  ? `gd-button gd-button--secondary label ${checked ? "border-accent text-accent" : ""}`
-                  : "body flex min-h-12 items-center gap-3 border-b border-border px-4 last:border-b-0"
+                  ? "gd-button gd-button--secondary gd-choice label"
+                  : "gd-choice body flex min-h-12 items-center gap-3 border-b border-border px-4 last:border-b-0"
               }
             >
               <input

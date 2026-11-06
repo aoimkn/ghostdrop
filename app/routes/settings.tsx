@@ -188,7 +188,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
             {locales.map((candidate) => (
               <label
                 key={candidate}
-                className={`gd-button gd-button--secondary label min-h-11 ${candidate === locale ? "border-accent text-accent" : ""}`}
+                className="gd-button gd-button--secondary gd-choice label min-h-11"
               >
                 <input
                   type="radio"
