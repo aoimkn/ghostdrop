@@ -14,6 +14,9 @@ export async function open(
   const context = await browser.newContext({
     viewport,
     serviceWorkers: serviceWorker ? "allow" : "block",
+    // Sign-in attempts are limited per network, so each device comes from its own, as separate
+    // people's devices would rather than all of them from this machine.
+    extraHTTPHeaders: { "CF-Connecting-IP": randomAddress() },
   });
   const page = await context.newPage();
   return { page, authenticator: await attachAuthenticator(page) };
@@ -50,4 +53,8 @@ export async function addDevice(page: Page, passphrase: string, deviceName: stri
   await page.getByLabel("[passphrase_label]").fill(passphrase);
   await page.getByLabel("[device_name_label]").fill(deviceName);
   await page.getByRole("button", { name: "[device_add]" }).click();
+}
+
+function randomAddress(): string {
+  return Array.from(crypto.getRandomValues(new Uint8Array(4))).join(".");
 }
