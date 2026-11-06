@@ -188,7 +188,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   if (wide) {
     return (
       <main className="min-h-dvh px-[max(16px,3vw)] py-6">
-        <div className="mx-auto flex max-w-[1120px] flex-col gap-6">
+        <div className="mx-auto flex max-w-280 flex-col gap-6">
           {header}
           {alert !== null && <Alert tone="danger">{alert}</Alert>}
           {offline && (

@@ -30,7 +30,7 @@ function ClipboardEntry({ entry, surface }: { entry: readonly Item[]; surface: s
       <div className="mono text-ink-muted">
         {entry.map((item) => item.type).join(", ")} &middot; {formatSize(totalSize(entry))}
       </div>
-      {preview !== null && <p className="body m-0 line-clamp-3 break-words">{preview}</p>}
+      {preview !== null && <p className="body m-0 line-clamp-3 wrap-break-word">{preview}</p>}
       <button
         type="button"
         className="gd-button gd-button--primary label min-h-11"
