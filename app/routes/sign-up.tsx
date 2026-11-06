@@ -3,8 +3,8 @@ import { useNavigate } from "react-router";
 
 import { onlyAt } from "~/app/.server/stage";
 import { signUp } from "~/app/lib/account.client";
-import { isValidDeviceName } from "~/app/lib/device-name";
-import { isLongEnough } from "~/app/lib/passphrase";
+import { isValidDeviceName, MAX_DEVICE_NAME_LENGTH } from "~/app/lib/device-name";
+import { isLongEnough, MIN_PASSPHRASE_LENGTH } from "~/app/lib/passphrase";
 import { m } from "~/app/paraglide/messages";
 import { Alert } from "~/app/ui/alert";
 import { errorMessage, isCancelledByUser } from "~/app/ui/error-message";
@@ -52,7 +52,7 @@ export default function SignUp() {
         <p className="body m-0 text-ink-muted">{m.account_sign_up_body()}</p>
         <Field
           label={m.passphrase_new_label()}
-          hint={m.passphrase_hint()}
+          hint={m.passphrase_hint({ min: MIN_PASSPHRASE_LENGTH })}
           type="password"
           autoComplete="new-password"
           value={passphrase}
@@ -60,7 +60,7 @@ export default function SignUp() {
         />
         <Field
           label={m.device_name_label()}
-          hint={m.device_name_hint()}
+          hint={m.device_name_hint({ max: MAX_DEVICE_NAME_LENGTH })}
           autoComplete="off"
           value={name}
           onChange={(event) => setName(event.target.value)}

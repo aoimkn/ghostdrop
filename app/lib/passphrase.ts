@@ -5,7 +5,7 @@ const SALT_BYTES = 16;
 // OWASP's recommendation for PBKDF2-HMAC-SHA256. Argon2id is preferable but no browser
 // implements it natively yet; a new VERSION can switch once one does.
 const ITERATIONS = 600_000;
-const MIN_LENGTH = 15;
+export const MIN_PASSPHRASE_LENGTH = 15;
 
 export function normalize(passphrase: string): string {
   return passphrase.normalize("NFC");
@@ -13,7 +13,7 @@ export function normalize(passphrase: string): string {
 
 // Length counts Unicode code points, as NIST SP 800-63B specifies, not grapheme clusters.
 export function isLongEnough(passphrase: string): boolean {
-  return codePointCount(normalize(passphrase)) >= MIN_LENGTH;
+  return codePointCount(normalize(passphrase)) >= MIN_PASSPHRASE_LENGTH;
 }
 
 export function newParams(): Uint8Array<ArrayBuffer> {

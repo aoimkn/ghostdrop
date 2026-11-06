@@ -14,7 +14,7 @@ import {
 } from "~/app/lib/account.client";
 import { onlyAt } from "~/app/.server/stage";
 import { ApiError } from "~/app/lib/api.client";
-import { isValidDeviceName } from "~/app/lib/device-name";
+import { isValidDeviceName, MAX_DEVICE_NAME_LENGTH } from "~/app/lib/device-name";
 import { listDrops } from "~/app/lib/drops.client";
 import { requireReady } from "~/app/ui/gate.client";
 import { m } from "~/app/paraglide/messages";
@@ -205,7 +205,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
         >
           <Field
             label={m.device_name_label()}
-            hint={m.device_name_hint()}
+            hint={m.device_name_hint({ max: MAX_DEVICE_NAME_LENGTH })}
             error={nameError}
             autoComplete="off"
             value={newName}

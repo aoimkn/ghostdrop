@@ -5,7 +5,7 @@ import { onlyAt } from "~/app/.server/stage";
 import { listDevices, replacePassphrase } from "~/app/lib/account.client";
 import { listDrops } from "~/app/lib/drops.client";
 import { requireReady } from "~/app/ui/gate.client";
-import { isLongEnough } from "~/app/lib/passphrase";
+import { isLongEnough, MIN_PASSPHRASE_LENGTH } from "~/app/lib/passphrase";
 import { m } from "~/app/paraglide/messages";
 import { Alert } from "~/app/ui/alert";
 import { Dialog } from "~/app/ui/dialog";
@@ -74,7 +74,7 @@ export default function ReplacePassphrase({ loaderData }: Route.ComponentProps) 
       >
         <Field
           label={m.passphrase_new_label()}
-          hint={m.passphrase_hint()}
+          hint={m.passphrase_hint({ min: MIN_PASSPHRASE_LENGTH })}
           type="password"
           autoComplete="new-password"
           value={passphrase}

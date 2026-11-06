@@ -1,6 +1,6 @@
 import { codePointCount } from "./text";
 
-const MAX_LENGTH = 32;
+export const MAX_DEVICE_NAME_LENGTH = 32;
 
 export function normalizeDeviceName(name: string): string {
   return name.normalize("NFC").trim();
@@ -8,5 +8,5 @@ export function normalizeDeviceName(name: string): string {
 
 export function isValidDeviceName(name: string): boolean {
   const normalized = normalizeDeviceName(name);
-  return normalized !== "" && codePointCount(normalized) <= MAX_LENGTH;
+  return normalized !== "" && codePointCount(normalized) <= MAX_DEVICE_NAME_LENGTH;
 }

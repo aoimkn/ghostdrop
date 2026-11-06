@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 import { onlyAt } from "~/app/.server/stage";
 import { addDevice, signOut } from "~/app/lib/account.client";
 import { ApiError } from "~/app/lib/api.client";
-import { isValidDeviceName } from "~/app/lib/device-name";
+import { isValidDeviceName, MAX_DEVICE_NAME_LENGTH } from "~/app/lib/device-name";
 import { m } from "~/app/paraglide/messages";
 import { Alert } from "~/app/ui/alert";
 import { errorMessage } from "~/app/ui/error-message";
@@ -71,7 +71,6 @@ export default function AddDevice() {
         </div>
         <Field
           label={m.passphrase_label()}
-          hint={m.passphrase_hint()}
           error={passphraseError}
           type="password"
           autoComplete="current-password"
@@ -81,7 +80,7 @@ export default function AddDevice() {
         />
         <Field
           label={m.device_name_label()}
-          hint={m.device_name_hint()}
+          hint={m.device_name_hint({ max: MAX_DEVICE_NAME_LENGTH })}
           error={nameError}
           autoComplete="off"
           disabled={lockout.locked}
