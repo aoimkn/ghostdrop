@@ -30,6 +30,7 @@ globalThis.addEventListener("activate", (event) => {
   );
 });
 
+/** @param {Request} request */
 async function fromCacheFirst(request) {
   const cached = await caches.match(request);
   if (cached) return cached;
@@ -38,6 +39,7 @@ async function fromCacheFirst(request) {
   return response;
 }
 
+/** @param {Request} request */
 async function fromNetworkFirst(request) {
   try {
     return await fetch(request);

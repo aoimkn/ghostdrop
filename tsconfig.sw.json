@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["app/service-worker.js"],
+  "compilerOptions": {
+    "composite": true,
+    "allowJs": true,
+    "lib": ["ES2022"],
+    "types": ["serviceworker"],
+    "libReplacement": true,
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler"
+  }
+}
