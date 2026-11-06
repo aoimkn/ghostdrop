@@ -16,5 +16,6 @@ export async function action({ request, context }: Route.ActionArgs) {
   const result = await account(env, accountId).unlockDevice(tokenHash, await verifier(proof));
   if (result === "no-device") return error(403, "no-device");
   if (result === "wrong-passphrase") return error(403, "wrong-passphrase");
+  if (result === "too-many-attempts") return error(429, "rate-limited");
   return new Response(null, { status: 204 });
 }

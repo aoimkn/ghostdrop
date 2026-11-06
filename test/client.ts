@@ -5,6 +5,8 @@ export const ORIGIN = "https://ghostdrop.test";
 export class Client {
   cookie: string | null = null;
 
+  constructor(readonly address = randomAddress()) {}
+
   async request(
     method: string,
     path: string,
@@ -17,6 +19,7 @@ export class Client {
         ...(method === "GET" ? {} : { Origin: ORIGIN }),
         ...(body === undefined ? {} : { "Content-Type": "application/json" }),
         ...(this.cookie === null ? {} : { Cookie: this.cookie }),
+        "CF-Connecting-IP": this.address,
         ...headers,
       },
       body: body === undefined ? undefined : JSON.stringify(body),
@@ -35,6 +38,7 @@ export class Client {
       headers: {
         Origin: ORIGIN,
         "Content-Length": String(body.length),
+        "CF-Connecting-IP": this.address,
         ...(this.cookie === null ? {} : { Cookie: this.cookie }),
       },
       body,
@@ -47,4 +51,8 @@ export class Client {
       throw new Error(`${method} ${path}: ${response.status} ${await response.text()}`);
     return response.json<T>();
   }
+}
+
+function randomAddress(): string {
+  return Array.from(crypto.getRandomValues(new Uint8Array(4))).join(".");
 }

@@ -2,9 +2,12 @@ import { generateRegistrationOptions } from "@simplewebauthn/server";
 import { isoBase64URL } from "@simplewebauthn/server/helpers";
 
 import { cloudflareContext } from "~/app/.server/context";
+import { limitAuthAttempts } from "~/app/.server/rate-limit";
 import { issueChallenge, newAccountId, relyingParty, RP_NAME } from "~/app/.server/webauthn";
 
 import type { Route } from "./+types/sign-up-options";
+
+export const middleware: Route.MiddlewareFunction[] = [limitAuthAttempts];
 
 export async function action({ request, context }: Route.ActionArgs) {
   const { env } = context.get(cloudflareContext);

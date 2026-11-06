@@ -143,13 +143,20 @@ Rationale: these three are the only types the Clipboard API requires browsers to
 
 ## 8. Limits
 
-| Limit                             | Value                         |
-| --------------------------------- | ----------------------------- |
-| Expiry period                     | 24 hours                      |
-| Maximum drop size                 | 100 MiB                       |
-| Maximum pending drops per account | 10                            |
-| Maximum items per drop            | 100                           |
-| Upload timeout                    | 1 hour                        |
-| Minimum passphrase length         | 15 characters                 |
-| Maximum device name length        | TBD                           |
-| Session lifetime                  | 30 days, extended on each use |
+| Limit                                    | Value                         |
+| ---------------------------------------- | ----------------------------- |
+| Expiry period                            | 24 hours                      |
+| Maximum drop size                        | 100 MiB                       |
+| Maximum pending drops per account        | 10                            |
+| Maximum items per drop                   | 100                           |
+| Upload timeout                           | 1 hour                        |
+| Minimum passphrase length                | 15 characters                 |
+| Maximum device name length               | TBD                           |
+| Session lifetime                         | 30 days, extended on each use |
+| Sign-up and sign-in attempts per network | About 10 per minute           |
+| Wrong passphrase entries per account     | 10 per hour                   |
+| New drops per account                    | About 30 per minute           |
+
+A request over one of these limits is rejected and succeeds again once the period has passed.
+
+Wrong passphrase entries are counted for the whole account, whichever browser they come from. While the account is at that limit, adding and unlocking devices is refused even with the correct passphrase.

@@ -14,4 +14,8 @@
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Account", "Challenge"] }],
   "r2_buckets": [{ "binding": "DROPS", "bucket_name": "ghostdrop-drops" }],
+  "ratelimits": [
+    { "name": "AUTH_LIMITER", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } },
+    { "name": "DROP_LIMITER", "namespace_id": "1002", "simple": { "limit": 30, "period": 60 } },
+  ],
 }

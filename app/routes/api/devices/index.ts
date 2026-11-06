@@ -32,6 +32,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     await verifier(proof),
   );
   if (result === "wrong-passphrase") return error(403, "wrong-passphrase");
+  if (result === "too-many-attempts") return error(429, "rate-limited");
   if (result === "already-added") return error(409, "already-added");
   if (result === "name-taken") return error(409, "name-taken");
   return new Response(null, { status: 204 });

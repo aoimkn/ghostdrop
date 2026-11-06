@@ -83,8 +83,10 @@ export class Account extends DurableObject<Env> {
     tokenHash: string,
     device: { id: string; name: string },
     verifier: Uint8Array,
-  ): Promise<"added" | "wrong-passphrase" | "already-added" | "name-taken"> {
-    if (!this.devices.verifierMatches(verifier)) return "wrong-passphrase";
+  ): Promise<"added" | "wrong-passphrase" | "too-many-attempts" | "already-added" | "name-taken"> {
+    const check = this.devices.checkPassphrase(verifier);
+    if (check === "wrong") return "wrong-passphrase";
+    if (check === "too-many-attempts") return check;
     this.purgeExpiredSessions();
     const result = this.devices.add(tokenHash, device);
     await this.settle();
@@ -94,9 +96,11 @@ export class Account extends DurableObject<Env> {
   unlockDevice(
     tokenHash: string,
     verifier: Uint8Array,
-  ): "unlocked" | "wrong-passphrase" | "no-device" {
+  ): "unlocked" | "wrong-passphrase" | "too-many-attempts" | "no-device" {
     if (!this.devices.ofSession(tokenHash)) return "no-device";
-    if (!this.devices.verifierMatches(verifier)) return "wrong-passphrase";
+    const check = this.devices.checkPassphrase(verifier);
+    if (check === "wrong") return "wrong-passphrase";
+    if (check === "too-many-attempts") return check;
     this.devices.unlock(tokenHash);
     return "unlocked";
   }

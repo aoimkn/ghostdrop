@@ -1,3 +1,6 @@
+const MAX_FAILURES = 10;
+const FAILURE_WINDOW_MS = 60 * 60 * 1000;
+
 export type Passphrase = { params: Uint8Array; verifier: Uint8Array };
 
 export type Device = { id: string; name: string; locked: boolean; createdAt: number };
@@ -16,6 +19,9 @@ export class Devices {
         params BLOB NOT NULL,
         verifier BLOB NOT NULL,
         epoch INTEGER NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS passphrase_failures (
+        at INTEGER NOT NULL
       );
       CREATE TABLE IF NOT EXISTS sessions (
         token_hash TEXT PRIMARY KEY,
@@ -58,7 +64,21 @@ export class Devices {
     return row ? new Uint8Array(row.params) : null;
   }
 
-  verifierMatches(verifier: Uint8Array): boolean {
+  // Every attempt is refused while the account is at the limit, so a correct guess cannot
+  // be told apart from a wrong one.
+  checkPassphrase(verifier: Uint8Array): "correct" | "wrong" | "too-many-attempts" {
+    const now = Date.now();
+    this.sql.exec("DELETE FROM passphrase_failures WHERE at <= ?", now - FAILURE_WINDOW_MS);
+    const failures = this.sql
+      .exec<{ n: number }>("SELECT COUNT(*) AS n FROM passphrase_failures")
+      .one().n;
+    if (failures >= MAX_FAILURES) return "too-many-attempts";
+    if (this.verifierMatches(verifier)) return "correct";
+    this.sql.exec("INSERT INTO passphrase_failures (at) VALUES (?)", now);
+    return "wrong";
+  }
+
+  private verifierMatches(verifier: Uint8Array): boolean {
     const row = this.sql
       .exec<{ verifier: ArrayBuffer }>("SELECT verifier FROM passphrase")
       .toArray()[0];

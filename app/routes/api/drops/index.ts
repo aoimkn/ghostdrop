@@ -30,6 +30,9 @@ export async function action({ request, context }: Route.ActionArgs) {
   const { env } = context.get(cloudflareContext);
   const { accountId, tokenHash } = context.get(sessionContext);
   const { target, items } = await readJson(request, body);
+  if (!(await env.DROP_LIMITER.limit({ key: accountId })).success) {
+    return error(429, "rate-limited");
+  }
   const result = await account(env, accountId).createDrop(
     tokenHash,
     target,

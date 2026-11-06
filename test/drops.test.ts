@@ -256,6 +256,19 @@ describe("limits", () => {
     expect((await create(first, [MAX_DROP_BYTES])).status).toBe(201);
   });
 
+  it("limits how many drops an account starts per minute", async () => {
+    const { first } = await account();
+    for (let i = 0; i < 30; i++) {
+      const response = await create(first, [1]);
+      expect(response.status).toBe(201);
+      const { id } = await response.json<{ id: string }>();
+      expect((await first.request("DELETE", `/api/drops/${id}`)).status).toBe(204);
+    }
+    const response = await create(first, [1]);
+    expect(response.status).toBe(429);
+    expect(await response.json()).toEqual({ error: "rate-limited" });
+  });
+
   it("rejects more than 100 items", async () => {
     const { first } = await account();
     const response = await create(
