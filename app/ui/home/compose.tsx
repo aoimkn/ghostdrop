@@ -53,7 +53,6 @@ function ItemRows({
 
 export function Sources({ compose, wide }: { compose: Compose; wide: boolean }) {
   const files = useRef<HTMLInputElement>(null);
-  const camera = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
   return (
     <div
@@ -75,6 +74,13 @@ export function Sources({ compose, wide }: { compose: Compose; wide: boolean }) 
       >
         <button
           type="button"
+          className={`gd-button gd-button--secondary label min-h-11 ${wide ? "" : "col-span-2"}`}
+          onClick={() => files.current?.click()}
+        >
+          {m.drop_pick()}
+        </button>
+        <button
+          type="button"
           className="gd-button gd-button--secondary label min-h-11"
           onClick={() => void compose.paste()}
         >
@@ -83,42 +89,15 @@ export function Sources({ compose, wide }: { compose: Compose; wide: boolean }) 
         <button
           type="button"
           className="gd-button gd-button--secondary label min-h-11"
-          onClick={() => files.current?.click()}
-        >
-          {m.drop_pick_files()}
-        </button>
-        <button
-          type="button"
-          className="gd-button gd-button--secondary label min-h-11"
           onClick={compose.startWriting}
         >
           {m.drop_write_text()}
         </button>
-        {!wide && (
-          <button
-            type="button"
-            className="gd-button gd-button--secondary label min-h-11"
-            onClick={() => camera.current?.click()}
-          >
-            {m.drop_take_photo()}
-          </button>
-        )}
       </div>
       <input
         ref={files}
         type="file"
         multiple
-        hidden
-        onChange={(event) => {
-          if (event.target.files) compose.addFiles(event.target.files);
-          event.target.value = "";
-        }}
-      />
-      <input
-        ref={camera}
-        type="file"
-        accept="image/*,video/*"
-        capture="environment"
         hidden
         onChange={(event) => {
           if (event.target.files) compose.addFiles(event.target.files);
