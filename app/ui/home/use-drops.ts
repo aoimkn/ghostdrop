@@ -8,9 +8,14 @@ import { homeOf, stageOf } from "~/app/ui/gate.client";
 
 export type Entry = { drop: Drop; meta: ItemMeta[]; size: number; fresh: boolean };
 
-export function useDrops(): { entries: Entry[] | null; refresh: () => Promise<void> } {
+export function useDrops(): {
+  entries: Entry[] | null;
+  connected: boolean;
+  refresh: () => Promise<void>;
+} {
   const navigate = useNavigate();
   const [entries, setEntries] = useState<Entry[] | null>(null);
+  const [connected, setConnected] = useState(true);
   const seen = useRef<Set<string> | null>(null);
   const fresh = useRef(new Set<string>());
   const manifests = useRef(new Map<string, ItemMeta[]>());
@@ -43,7 +48,7 @@ export function useDrops(): { entries: Entry[] | null; refresh: () => Promise<vo
   };
 
   const onChange = useEffectEvent(() => void refresh());
-  useEffect(() => watchDrops(onChange), []);
+  useEffect(() => watchDrops(onChange, setConnected), []);
 
-  return { entries, refresh };
+  return { entries, connected, refresh };
 }

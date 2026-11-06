@@ -26,6 +26,7 @@ import { Logo } from "~/app/ui/logo";
 import { BackHeader, Column } from "~/app/ui/page";
 import { TransferProgress } from "~/app/ui/progress";
 import { useNow } from "~/app/ui/use-now";
+import { useOnline } from "~/app/ui/use-online";
 
 import type { Route } from "./+types/home";
 
@@ -59,7 +60,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const navigate = useNavigate();
   const wide = useWide();
   const now = useNow(30_000);
-  const { entries, refresh } = useDrops();
+  const { entries, connected, refresh } = useDrops();
+  const online = useOnline();
+  const offline = !online || !connected;
   const [receiving, setReceiving] = useState<Receiving | null>(null);
   const [received, setReceived] = useState<Received | null>(null);
   const toUnlock = () => void navigate("/unlock");
@@ -160,6 +163,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       <main className="min-h-dvh px-[max(16px,3vw)] py-6">
         <div className="mx-auto flex max-w-[1120px] flex-col gap-6">
           {header}
+          {offline && (
+            <Alert tone="warning" quiet>
+              {m.common_offline()}
+            </Alert>
+          )}
           <div className="flex flex-wrap items-start gap-6">
             <section className="flex min-w-0 flex-[1_1_420px] flex-col gap-4 rounded-lg bg-surface-raised p-6">
               <h2 className="label m-0 text-ink-muted">{m.drop_compose_title()}</h2>
@@ -273,6 +281,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   return (
     <Column>
       {header}
+      {offline && (
+        <Alert tone="warning" quiet>
+          {m.common_offline()}
+        </Alert>
+      )}
       <Sources compose={compose} wide={false} />
       {pending}
     </Column>

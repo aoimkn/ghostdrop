@@ -81,3 +81,22 @@ test("replacing the passphrase locks the other devices until they enter it", asy
   await desktop.page.getByRole("button", { name: "[device_unlock]" }).click();
   await expect(desktop.page.getByText("[drop_pending_title]")).toBeVisible();
 });
+
+test("an unknown address shows the not-found screen", async ({ page }) => {
+  const response = await page.goto("/no-such-page");
+  expect(response?.status()).toBe(404);
+  await expect(page.getByText("[error_not_found_title]")).toBeVisible();
+  await page.getByRole("link", { name: "[common_go_home]" }).click();
+  await expect(page).toHaveURL(/\/sign-in$/);
+});
+
+test("home says when the device is offline and stops once it is back", async ({ browser }) => {
+  const phone = await open(browser, PHONE);
+  await signUp(phone.page, "iPhone");
+  await expect(phone.page.getByText("[common_offline]")).toBeHidden();
+
+  await phone.page.context().setOffline(true);
+  await expect(phone.page.getByText("[common_offline]")).toBeVisible();
+  await phone.page.context().setOffline(false);
+  await expect(phone.page.getByText("[common_offline]")).toBeHidden({ timeout: 15_000 });
+});

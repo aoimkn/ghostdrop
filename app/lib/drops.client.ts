@@ -158,7 +158,10 @@ export async function deleteDrop(id: string): Promise<void> {
   await call("DELETE", `/api/drops/${encodeURIComponent(id)}`);
 }
 
-export function watchDrops(onChange: () => void): () => void {
+export function watchDrops(
+  onChange: () => void,
+  onConnection: (connected: boolean) => void,
+): () => void {
   let socket: WebSocket | null = null;
   let retry: ReturnType<typeof setTimeout> | undefined;
   let delay = 1000;
@@ -169,11 +172,13 @@ export function watchDrops(onChange: () => void): () => void {
     socket = new WebSocket(url);
     socket.addEventListener("open", () => {
       delay = 1000;
+      onConnection(true);
       onChange();
     });
     socket.addEventListener("message", () => onChange());
     socket.addEventListener("close", () => {
       if (stopped) return;
+      onConnection(false);
       retry = setTimeout(connect, delay);
       delay = Math.min(delay * 2, 30_000);
     });
