@@ -9,6 +9,7 @@ export default [
   route("settings", "routes/settings.tsx"),
   route("settings/passphrase", "routes/replace-passphrase.tsx"),
   route("offline", "routes/offline.tsx"),
+  route("share", "routes/share.ts"),
   route("sw.js", "routes/service-worker.ts"),
   ...prefix("api", [
     layout("routes/api/layout.ts", [

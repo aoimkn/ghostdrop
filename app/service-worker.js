@@ -30,6 +30,52 @@ globalThis.addEventListener("activate", (event) => {
   );
 });
 
+// Shared content stays on the device: it waits here, unencrypted, until home picks it up.
+/**
+ * @param {{ text: string | null, files: File[] }} shared
+ * @returns {Promise<void>}
+ */
+function keepShared(shared) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open("ghostdrop-share", 1);
+    request.addEventListener("upgradeneeded", () => request.result.createObjectStore("share"));
+    request.addEventListener("error", () => reject(request.error));
+    request.addEventListener("success", () => {
+      const db = request.result;
+      const transaction = db.transaction("share", "readwrite");
+      transaction.objectStore("share").put(shared, "pending");
+      transaction.addEventListener("complete", () => {
+        db.close();
+        resolve();
+      });
+      transaction.addEventListener("error", () => reject(transaction.error));
+    });
+  });
+}
+
+/** @param {Request} request */
+async function receiveShare(request) {
+  const form = await request.formData();
+  /** @param {string} name */
+  const field = (name) => {
+    const value = form.get(name);
+    return typeof value === "string" && value !== "" ? value : null;
+  };
+  const text = field("text");
+  const url = field("url");
+  const joined =
+    url === null || (text !== null && text.includes(url))
+      ? text
+      : text === null
+        ? url
+        : `${text}\n${url}`;
+  const files = form
+    .getAll("files")
+    .filter(/** @returns {value is File} */ (value) => value instanceof File && value.name !== "");
+  await keepShared({ text: joined, files });
+  return Response.redirect("/", 303);
+}
+
 /** @param {Request} request */
 async function fromCacheFirst(request) {
   const cached = await caches.match(request);
@@ -51,7 +97,12 @@ async function fromNetworkFirst(request) {
 globalThis.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
-  if (request.method !== "GET" || url.origin !== globalThis.location.origin) return;
+  if (url.origin !== globalThis.location.origin) return;
+  if (request.method === "POST" && url.pathname === "/share") {
+    event.respondWith(receiveShare(request));
+    return;
+  }
+  if (request.method !== "GET") return;
   if (request.mode === "navigate") event.respondWith(fromNetworkFirst(request));
   else if (url.pathname.startsWith("/assets/")) event.respondWith(fromCacheFirst(request));
 });

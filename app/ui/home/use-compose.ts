@@ -13,6 +13,7 @@ import {
 } from "~/app/lib/content";
 import { MAX_DROP_BYTES, MAX_ITEMS } from "~/app/lib/drop-format";
 import { LockedError, sendDrop } from "~/app/lib/drops.client";
+import type { Shared } from "~/app/lib/share.client";
 import { m } from "~/app/paraglide/messages";
 import { errorMessage } from "~/app/ui/error-message";
 
@@ -102,6 +103,8 @@ export function useCompose({ onSent, onLocked }: { onSent: () => void; onLocked:
     alert,
     open: items.length > 0 || writing || phase !== "editing",
     addFiles: (files: Iterable<File>) => add(fromFiles(files)),
+    addShared: (shared: Shared) =>
+      add([...(shared.text === null ? [] : fromText(shared.text)), ...fromFiles(shared.files)]),
     addTransfer,
     paste,
     startWriting: () => setWriting(true),

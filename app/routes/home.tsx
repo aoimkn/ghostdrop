@@ -1,5 +1,5 @@
 import { GearSixIcon } from "@phosphor-icons/react/dist/csr/GearSix";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useEffectEvent, useState, useSyncExternalStore } from "react";
 import { Link, useNavigate } from "react-router";
 
 import { listDevices } from "~/app/lib/account.client";
@@ -12,6 +12,7 @@ import {
   LockedError,
   receiveDrop,
 } from "~/app/lib/drops.client";
+import { takeShared } from "~/app/lib/share.client";
 import { formatSize } from "~/app/ui/format";
 import { requireReady } from "~/app/ui/gate.client";
 import { m } from "~/app/paraglide/messages";
@@ -69,6 +70,15 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const toUnlock = () => void navigate("/unlock");
   const compose = useCompose({ onSent: () => void refresh(), onLocked: toUnlock });
   useUpdateWhenIdle(!compose.open && receiving === null && received === null);
+
+  const onShared = useEffectEvent(compose.addShared);
+  useEffect(() => {
+    const pickUp = async () => {
+      const shared = await takeShared();
+      if (shared !== null) onShared(shared);
+    };
+    void pickUp();
+  }, []);
 
   useEffect(() => {
     const onPaste = (event: ClipboardEvent) => {

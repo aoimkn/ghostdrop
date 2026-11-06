@@ -117,6 +117,7 @@ Existing content — anything that already exists on the device:
 - the clipboard (paste)
 - files in storage (file picker, drag and drop)
 - content in other apps (drag and drop)
+- content shared from other apps (where the browser lets an installed web app receive shares; ghostdrop opens with it ready to send)
 
 New content — created within ghostdrop for the drop:
 
