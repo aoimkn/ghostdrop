@@ -36,7 +36,7 @@ import { useUpdateWhenIdle } from "~/app/ui/update";
 
 import type { Route } from "./+types/home";
 
-export const middleware: Route.MiddlewareFunction[] = [onlyAt("device")];
+export const middleware: Route.MiddlewareFunction[] = [onlyAt("ready")];
 
 export async function clientLoader() {
   const session = await requireReady();
@@ -155,7 +155,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </span>
         )}
       </div>
-      {entries === null && <DropRowsSkeleton />}
+      {entries === null && <DropRowsSkeleton rows={2} />}
       {entries?.length === 0 && (
         <p className="body m-0 rounded-md bg-surface-raised px-4 py-6 text-center text-ink-muted">
           {m.drop_pending_empty()}

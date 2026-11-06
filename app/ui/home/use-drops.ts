@@ -4,7 +4,8 @@ import { useNavigate } from "react-router";
 import { getSession } from "~/app/lib/account.client";
 import type { ItemMeta } from "~/app/lib/drop-crypto";
 import { type Drop, listDrops, readManifest, watchDrops } from "~/app/lib/drops.client";
-import { homeOf, stageOf } from "~/app/ui/gate.client";
+import { STAGE_HOME } from "~/app/lib/stage";
+import { stageOf } from "~/app/ui/gate.client";
 
 export type Entry = { drop: Drop; meta: ItemMeta[]; size: number; fresh: boolean };
 
@@ -23,7 +24,7 @@ export function useDrops(): {
   const refresh = async () => {
     const stage = stageOf(await getSession());
     if (stage !== "ready") {
-      await navigate(homeOf(stage));
+      await navigate(STAGE_HOME[stage]);
       return;
     }
     const drops = await listDrops();

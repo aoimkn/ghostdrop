@@ -1,19 +1,16 @@
 import { z } from "zod";
 
-import { type Place, transact } from "./idb.client";
-
-// The service worker writes here when another app shares with ghostdrop.
-const PLACE: Place = { database: "ghostdrop-share", store: "share" };
-const KEY = "pending";
+import { transact } from "./idb.client";
+import { SHARE_KEY, SHARE_PLACE } from "./share";
 
 const shared = z.object({ text: z.string().nullable(), files: z.array(z.instanceof(File)) });
 
 export type Shared = z.infer<typeof shared>;
 
 export async function takeShared(): Promise<Shared | null> {
-  const value: unknown = await transact(PLACE, "readonly", (store) => store.get(KEY));
+  const value: unknown = await transact(SHARE_PLACE, "readonly", (store) => store.get(SHARE_KEY));
   if (value === undefined) return null;
-  await transact(PLACE, "readwrite", (store) => store.delete(KEY));
+  await transact(SHARE_PLACE, "readwrite", (store) => store.delete(SHARE_KEY));
   const parsed = shared.safeParse(value);
   return parsed.success ? parsed.data : null;
 }

@@ -5,7 +5,3 @@ import { redirect } from "react-router";
 export function action() {
   return redirect("/", 303);
 }
-
-export function loader() {
-  return redirect("/");
-}

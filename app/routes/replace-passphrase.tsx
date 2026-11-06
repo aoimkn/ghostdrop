@@ -16,7 +16,7 @@ import { LineSkeleton } from "~/app/ui/skeleton";
 
 import type { Route } from "./+types/replace-passphrase";
 
-export const middleware: Route.MiddlewareFunction[] = [onlyAt("device")];
+export const middleware: Route.MiddlewareFunction[] = [onlyAt("ready")];
 
 export async function clientLoader() {
   await requireReady();

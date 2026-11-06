@@ -16,7 +16,7 @@ import { Column } from "~/app/ui/page";
 
 import type { Route } from "./+types/unlock";
 
-export const middleware: Route.MiddlewareFunction[] = [onlyAt("locked", "device")];
+export const middleware: Route.MiddlewareFunction[] = [onlyAt("locked", "ready")];
 
 export async function clientLoader() {
   const session = await requireStage("locked");

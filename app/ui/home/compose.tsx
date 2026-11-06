@@ -7,7 +7,7 @@ import { formatSize, formatSizeOf } from "~/app/ui/format";
 import { m } from "~/app/paraglide/messages";
 import { Alert } from "~/app/ui/alert";
 import { LockedBadge } from "~/app/ui/device";
-import { DeviceRowsSkeleton } from "~/app/ui/skeleton";
+import { ListRowsSkeleton } from "~/app/ui/skeleton";
 import { TransferProgress } from "~/app/ui/progress";
 
 import type { Compose } from "./use-compose";
@@ -177,7 +177,7 @@ function Targets({
     <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
       <legend className="label mb-2 p-0 text-ink-muted">{m.drop_target_label()}</legend>
       <div className={wide ? "flex flex-wrap gap-2" : "flex flex-col rounded-md bg-surface-raised"}>
-        <Suspense fallback={<DeviceRowsSkeleton rows={1} />}>
+        <Suspense fallback={<ListRowsSkeleton rows={1} />}>
           <TargetOptions compose={compose} devices={devices} wide={wide} />
         </Suspense>
       </div>

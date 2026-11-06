@@ -1,4 +1,4 @@
-import { Suspense, use, useState } from "react";
+import { Suspense, useState } from "react";
 import { useNavigate, useRevalidator } from "react-router";
 
 import {
@@ -16,24 +16,25 @@ import { onlyAt } from "~/app/.server/stage";
 import { ApiError } from "~/app/lib/api.client";
 import { isValidDeviceName } from "~/app/lib/device-name";
 import { listDrops } from "~/app/lib/drops.client";
-import { formatDate } from "~/app/ui/format";
 import { requireReady } from "~/app/ui/gate.client";
 import { m } from "~/app/paraglide/messages";
 import { getLocale, locales, setLocale } from "~/app/paraglide/runtime";
 import { Alert } from "~/app/ui/alert";
-import { LockedBadge } from "~/app/ui/device";
 import { Dialog } from "~/app/ui/dialog";
 import { errorMessage, isCancelledByUser } from "~/app/ui/error-message";
 import { Field } from "~/app/ui/field";
 import { BackHeader, Column } from "~/app/ui/page";
+import { AccountCounts } from "~/app/ui/settings/account-counts";
+import { DeviceRows } from "~/app/ui/settings/device-rows";
+import { PasskeyRows } from "~/app/ui/settings/passkey-rows";
 import { SignOutDialog } from "~/app/ui/sign-out-dialog";
-import { DeviceRowsSkeleton, LineSkeleton } from "~/app/ui/skeleton";
+import { ListRowsSkeleton, LineSkeleton } from "~/app/ui/skeleton";
 
 import type { Route } from "./+types/settings";
 
 const LANGUAGE_NAMES: Record<string, string> = { ja: "日本語", en: "English" };
 
-export const middleware: Route.MiddlewareFunction[] = [onlyAt("device")];
+export const middleware: Route.MiddlewareFunction[] = [onlyAt("ready")];
 
 export async function clientLoader() {
   await requireReady();
@@ -59,89 +60,6 @@ type Open =
   | { kind: "sign-out" }
   | { kind: "delete-account" }
   | null;
-
-function DeviceRows({
-  devices,
-  onRename,
-  onRemove,
-}: {
-  devices: Promise<Device[]>;
-  onRename: (device: Device) => void;
-  onRemove: (device: Device) => void;
-}) {
-  const locale = getLocale();
-  return use(devices).map((device) => (
-    <div key={device.id} className="gd-device last:border-b-0">
-      <div className="gd-device__main">
-        <div className="gd-device__name body">
-          <span>{device.name}</span>
-          {device.current && <span className="gd-badge caption">{m.device_current()}</span>}
-          {device.locked && <LockedBadge />}
-        </div>
-        <div className="gd-device__since caption">
-          {m.device_added_at({ date: formatDate(locale, device.createdAt) })}
-        </div>
-      </div>
-      <div className="flex gap-2">
-        <button
-          type="button"
-          className="gd-button gd-button--subtle label min-h-11"
-          onClick={() => onRename(device)}
-        >
-          {m.device_rename()}
-        </button>
-        <button
-          type="button"
-          className="gd-button gd-button--subtle gd-button--destructive label min-h-11"
-          onClick={() => onRemove(device)}
-        >
-          {m.device_remove()}
-        </button>
-      </div>
-    </div>
-  ));
-}
-
-function PasskeyRows({
-  passkeys,
-  onRemove,
-}: {
-  passkeys: Promise<Passkey[]>;
-  onRemove: (passkey: Passkey) => void;
-}) {
-  const locale = getLocale();
-  return use(passkeys).map((passkey) => (
-    <div key={passkey.id} className="gd-device last:border-b-0">
-      <div className="gd-device__main">
-        <div className="caption text-ink-muted">
-          {m.passkey_created_at({ date: formatDate(locale, passkey.createdAt) })}
-        </div>
-        <div className="caption text-ink-muted">
-          {passkey.lastUsedAt === null
-            ? m.passkey_never_used()
-            : m.passkey_last_used_at({ date: formatDate(locale, passkey.lastUsedAt) })}
-        </div>
-      </div>
-      <button
-        type="button"
-        className="gd-button gd-button--subtle gd-button--destructive label min-h-11"
-        onClick={() => onRemove(passkey)}
-      >
-        {m.passkey_remove()}
-      </button>
-    </div>
-  ));
-}
-
-function AccountCounts({ counts }: { counts: Route.ComponentProps["loaderData"]["counts"] }) {
-  const { passkeys, devices, pendingDrops } = use(counts);
-  return (
-    <span className="mono text-ink-muted">
-      {m.passkey_count({ count: passkeys })} &middot; {m.device_count({ count: devices })} &middot;{" "}
-      {m.drop_pending_count({ count: pendingDrops })}
-    </span>
-  );
-}
 
 export default function Settings({ loaderData }: Route.ComponentProps) {
   const navigate = useNavigate();
@@ -186,7 +104,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
       <section className="flex flex-col gap-2">
         <h2 className="label m-0 text-ink-muted">{m.device_list_title()}</h2>
         <div className="rounded-md bg-surface-raised">
-          <Suspense fallback={<DeviceRowsSkeleton rows={2} />}>
+          <Suspense fallback={<ListRowsSkeleton rows={2} />}>
             <DeviceRows
               devices={loaderData.devices}
               onRename={(device) => {
@@ -203,7 +121,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
       <section className="flex flex-col gap-2">
         <h2 className="label m-0 text-ink-muted">{m.passkey_list_title()}</h2>
         <div className="rounded-md bg-surface-raised">
-          <Suspense fallback={<DeviceRowsSkeleton rows={1} />}>
+          <Suspense fallback={<ListRowsSkeleton rows={1} />}>
             <PasskeyRows
               passkeys={loaderData.passkeys}
               onRemove={(passkey) => setOpen({ kind: "remove-passkey", passkey })}

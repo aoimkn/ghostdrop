@@ -37,13 +37,15 @@ globalThis.addEventListener("activate", (event) => {
  */
 function keepShared(shared) {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open("ghostdrop-share", 1);
-    request.addEventListener("upgradeneeded", () => request.result.createObjectStore("share"));
+    const request = indexedDB.open("__SHARE_DATABASE__", 1);
+    request.addEventListener("upgradeneeded", () =>
+      request.result.createObjectStore("__SHARE_STORE__"),
+    );
     request.addEventListener("error", () => reject(request.error));
     request.addEventListener("success", () => {
       const db = request.result;
-      const transaction = db.transaction("share", "readwrite");
-      transaction.objectStore("share").put(shared, "pending");
+      const transaction = db.transaction("__SHARE_STORE__", "readwrite");
+      transaction.objectStore("__SHARE_STORE__").put(shared, "__SHARE_KEY__");
       transaction.addEventListener("complete", () => {
         db.close();
         resolve();
