@@ -85,7 +85,7 @@ The owner can delete their account. Its passkeys, devices and pending drops are 
 
 ### Sending
 
-- The owner creates a drop from one or more items on any device.
+- The owner creates a drop from one or more items on any device. The items' contents together may not exceed the maximum drop size.
 - Optionally, the owner picks a target device. Without a target, any other device of the account can receive the drop.
 - A drop becomes visible to other devices only once it is completely uploaded.
 
@@ -142,7 +142,7 @@ Rationale: these three are the only types the Clipboard API requires browsers to
 | Limit                             | Value                         |
 | --------------------------------- | ----------------------------- |
 | Expiry period                     | 24 hours                      |
-| Maximum drop size                 | 100 MB                        |
+| Maximum drop size                 | 100 MiB                       |
 | Maximum pending drops per account | 10                            |
 | Minimum passphrase length         | 15 characters                 |
 | Maximum device name length        | TBD                           |
