@@ -126,3 +126,21 @@ test("a page that cannot load shows the unexpected-error screen", async ({ page 
   await page.goto("/");
   await expect(page.getByText("[error_unknown_title]")).toBeVisible();
 });
+
+test("once opened, the app shows its own error screen when offline", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: PHONE, serviceWorkers: "allow" });
+  const page = await context.newPage();
+  await page.goto("/sign-in");
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+    if (navigator.serviceWorker.controller === null) {
+      await new Promise((resolve) =>
+        navigator.serviceWorker.addEventListener("controllerchange", resolve, { once: true }),
+      );
+    }
+  });
+
+  await context.setOffline(true);
+  await page.goto("/");
+  await expect(page.getByText("[error_unknown_title]")).toBeVisible();
+});
