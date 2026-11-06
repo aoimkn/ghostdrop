@@ -14,6 +14,7 @@ import { m } from "./paraglide/messages";
 import { getLocale } from "./paraglide/runtime";
 import { paraglideMiddleware } from "./paraglide/server";
 import { ErrorScreen } from "./ui/error-screen";
+import { Logo } from "./ui/logo";
 import { registerServiceWorker, useUpdateOnNavigation } from "./ui/update";
 import "./app.css";
 
@@ -74,6 +75,15 @@ export default function App() {
   useEffect(registerServiceWorker, []);
   useUpdateOnNavigation();
   return <Outlet />;
+}
+
+// Shown while a page waits for what only the browser holds: the passphrase key and decrypted data.
+export function HydrateFallback() {
+  return (
+    <main className="grid min-h-dvh place-items-center">
+      <Logo className="display text-[40px]" />
+    </main>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

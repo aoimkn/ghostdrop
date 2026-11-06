@@ -30,21 +30,29 @@ export function clearedSessionCookie(): string {
   return sessionCookie("", 0);
 }
 
-export const requireSession: MiddlewareFunction<Response> = async ({ request, context }, next) => {
-  const { env } = context.get(cloudflareContext);
-  const value = readCookie(request, COOKIE_NAME);
-  const [, accountId, token] = COOKIE_VALUE.exec(value ?? "") ?? [];
-  if (value === null || accountId === undefined || token === undefined) {
-    throw error(401, "unauthenticated");
-  }
+// Reading a session also extends it, as any use of the account does.
+export async function readSession(
+  env: Env,
+  request: Request,
+): Promise<(Session & { cookie: string }) | null> {
+  const cookie = readCookie(request, COOKIE_NAME);
+  const [, accountId, token] = COOKIE_VALUE.exec(cookie ?? "") ?? [];
+  if (cookie === null || accountId === undefined || token === undefined) return null;
   const tokenHash = await hash(token);
   if (!(await account(env, accountId).extendSession(tokenHash, Date.now() + LIFETIME_MS))) {
-    throw error(401, "unauthenticated");
+    return null;
   }
-  context.set(sessionContext, { accountId, tokenHash });
+  return { accountId, tokenHash, cookie };
+}
+
+export const requireSession: MiddlewareFunction<Response> = async ({ request, context }, next) => {
+  const { env } = context.get(cloudflareContext);
+  const session = await readSession(env, request);
+  if (session === null) throw error(401, "unauthenticated");
+  context.set(sessionContext, { accountId: session.accountId, tokenHash: session.tokenHash });
   const response = await next();
   if (!response.headers.has("Set-Cookie")) {
-    response.headers.append("Set-Cookie", sessionCookie(value, LIFETIME_MS / 1000));
+    response.headers.append("Set-Cookie", sessionCookie(session.cookie, LIFETIME_MS / 1000));
   }
   return response;
 };

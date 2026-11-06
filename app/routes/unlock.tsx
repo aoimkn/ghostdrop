@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
+import { onlyAt } from "~/app/.server/stage";
 import { unlockDevice } from "~/app/lib/account.client";
 import { ApiError } from "~/app/lib/api.client";
 import { requireStage } from "~/app/ui/gate.client";
@@ -15,13 +16,11 @@ import { Column } from "~/app/ui/page";
 
 import type { Route } from "./+types/unlock";
 
+export const middleware: Route.MiddlewareFunction[] = [onlyAt("locked", "device")];
+
 export async function clientLoader() {
   const session = await requireStage("locked");
   return { deviceName: session?.device?.name ?? "" };
-}
-
-export function HydrateFallback() {
-  return null;
 }
 
 export default function Unlock({ loaderData }: Route.ComponentProps) {

@@ -1,22 +1,17 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 
+import { onlyAt } from "~/app/.server/stage";
 import { signIn } from "~/app/lib/account.client";
-import { requireStage } from "~/app/ui/gate.client";
 import { m } from "~/app/paraglide/messages";
 import { Alert } from "~/app/ui/alert";
 import { errorMessage, isCancelledByUser } from "~/app/ui/error-message";
 import { Logo } from "~/app/ui/logo";
 import { Column } from "~/app/ui/page";
 
-export async function clientLoader() {
-  await requireStage("signed-out");
-  return null;
-}
+import type { Route } from "./+types/sign-in";
 
-export function HydrateFallback() {
-  return null;
-}
+export const middleware: Route.MiddlewareFunction[] = [onlyAt("signed-out")];
 
 export default function SignIn() {
   const navigate = useNavigate();

@@ -12,6 +12,7 @@ import {
   removePasskey,
   renameDevice,
 } from "~/app/lib/account.client";
+import { onlyAt } from "~/app/.server/stage";
 import { ApiError } from "~/app/lib/api.client";
 import { isValidDeviceName } from "~/app/lib/device-name";
 import { listDrops } from "~/app/lib/drops.client";
@@ -31,6 +32,8 @@ import type { Route } from "./+types/settings";
 
 const LANGUAGE_NAMES: Record<string, string> = { ja: "日本語", en: "English" };
 
+export const middleware: Route.MiddlewareFunction[] = [onlyAt("device")];
+
 export async function clientLoader() {
   await requireReady();
   const [devices, passkeys, drops] = await Promise.all([
@@ -39,10 +42,6 @@ export async function clientLoader() {
     listDrops(),
   ]);
   return { devices, passkeys, pendingDrops: drops.length };
-}
-
-export function HydrateFallback() {
-  return null;
 }
 
 type Open =

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
+import { onlyAt } from "~/app/.server/stage";
 import { addDevice, signOut } from "~/app/lib/account.client";
 import { ApiError } from "~/app/lib/api.client";
 import { isValidDeviceName } from "~/app/lib/device-name";
-import { requireStage } from "~/app/ui/gate.client";
 import { m } from "~/app/paraglide/messages";
 import { Alert } from "~/app/ui/alert";
 import { errorMessage } from "~/app/ui/error-message";
@@ -12,14 +12,9 @@ import { Field } from "~/app/ui/field";
 import { useLockout } from "~/app/ui/use-lockout";
 import { Column } from "~/app/ui/page";
 
-export async function clientLoader() {
-  await requireStage("no-device");
-  return null;
-}
+import type { Route } from "./+types/add-device";
 
-export function HydrateFallback() {
-  return null;
-}
+export const middleware: Route.MiddlewareFunction[] = [onlyAt("no-device")];
 
 export default function AddDevice() {
   const navigate = useNavigate();

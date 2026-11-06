@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
+import { onlyAt } from "~/app/.server/stage";
 import { signUp } from "~/app/lib/account.client";
 import { isValidDeviceName } from "~/app/lib/device-name";
-import { requireStage } from "~/app/ui/gate.client";
 import { isLongEnough } from "~/app/lib/passphrase";
 import { m } from "~/app/paraglide/messages";
 import { Alert } from "~/app/ui/alert";
@@ -11,14 +11,9 @@ import { errorMessage, isCancelledByUser } from "~/app/ui/error-message";
 import { Field } from "~/app/ui/field";
 import { BackHeader, Column } from "~/app/ui/page";
 
-export async function clientLoader() {
-  await requireStage("signed-out");
-  return null;
-}
+import type { Route } from "./+types/sign-up";
 
-export function HydrateFallback() {
-  return null;
-}
+export const middleware: Route.MiddlewareFunction[] = [onlyAt("signed-out")];
 
 export default function SignUp() {
   const navigate = useNavigate();

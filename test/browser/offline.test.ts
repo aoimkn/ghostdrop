@@ -10,13 +10,9 @@ test("an unknown address shows the not-found screen", async ({ page }) => {
   await expect(page).toHaveURL(/\/sign-in$/);
 });
 
-test("a page that cannot load shows the unexpected-error screen", async ({ page }) => {
-  await page.route("**/api/session", (route) => route.abort());
-  await page.goto("/");
-  await expect(page.getByText("[error_unknown_title]")).toBeVisible();
-});
-
-test("home says when the device is offline and stops once it is back", async ({ browser }) => {
+test("home survives a reload, says when it is offline, and shows the error screen when it cannot load", async ({
+  browser,
+}) => {
   const phone = await open(browser, PHONE);
   await signUp(phone.page, "iPhone");
   await expect(phone.page.getByText("[common_offline]")).toBeHidden();
@@ -25,6 +21,13 @@ test("home says when the device is offline and stops once it is back", async ({ 
   await expect(phone.page.getByText("[common_offline]")).toBeVisible();
   await phone.page.context().setOffline(false);
   await expect(phone.page.getByText("[common_offline]")).toBeHidden({ timeout: 15_000 });
+
+  await phone.page.reload();
+  await expect(phone.page.getByText("[drop_pending_title]")).toBeVisible();
+
+  await phone.page.route("**/api/session", (route) => route.abort());
+  await phone.page.reload();
+  await expect(phone.page.getByText("[error_unknown_title]")).toBeVisible();
 });
 
 test("once opened, the app shows its own error screen when offline", async ({ browser }) => {

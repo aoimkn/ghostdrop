@@ -2,6 +2,7 @@ import { GearSixIcon } from "@phosphor-icons/react/dist/csr/GearSix";
 import { useEffect, useEffectEvent, useState, useSyncExternalStore } from "react";
 import { Link, useNavigate } from "react-router";
 
+import { onlyAt } from "~/app/.server/stage";
 import { listDevices } from "~/app/lib/account.client";
 import { ApiError } from "~/app/lib/api.client";
 import { type Item, totalSize } from "~/app/lib/content";
@@ -34,13 +35,11 @@ import { useUpdateWhenIdle } from "~/app/ui/update";
 
 import type { Route } from "./+types/home";
 
+export const middleware: Route.MiddlewareFunction[] = [onlyAt("device")];
+
 export async function clientLoader() {
   const session = await requireReady();
   return { device: session.device, devices: await listDevices() };
-}
-
-export function HydrateFallback() {
-  return null;
 }
 
 const WIDE = "(min-width: 768px)";

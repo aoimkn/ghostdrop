@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
+import { onlyAt } from "~/app/.server/stage";
 import { listDevices, replacePassphrase } from "~/app/lib/account.client";
 import { listDrops } from "~/app/lib/drops.client";
 import { requireReady } from "~/app/ui/gate.client";
@@ -14,6 +15,8 @@ import { BackHeader, Column } from "~/app/ui/page";
 
 import type { Route } from "./+types/replace-passphrase";
 
+export const middleware: Route.MiddlewareFunction[] = [onlyAt("device")];
+
 export async function clientLoader() {
   await requireReady();
   const [devices, drops] = await Promise.all([listDevices(), listDrops()]);
@@ -21,10 +24,6 @@ export async function clientLoader() {
     otherDevices: devices.filter((device) => !device.current).length,
     pendingDrops: drops.length,
   };
-}
-
-export function HydrateFallback() {
-  return null;
 }
 
 export default function ReplacePassphrase({ loaderData }: Route.ComponentProps) {

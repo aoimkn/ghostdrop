@@ -28,3 +28,13 @@ test("replacing the passphrase locks the other devices until they enter it", asy
   await desktop.page.getByRole("button", { name: "[device_unlock]" }).click();
   await expect(desktop.page.getByText("[drop_pending_title]")).toBeVisible();
 });
+
+test("the server sends a browser that is not signed in to sign-in before any page renders", async ({
+  page,
+}) => {
+  for (const path of ["/", "/settings", "/unlock", "/add-device"]) {
+    const response = await page.request.get(path, { maxRedirects: 0 });
+    expect(response.status(), path).toBe(302);
+    expect(response.headers().location, path).toBe("/sign-in");
+  }
+});
