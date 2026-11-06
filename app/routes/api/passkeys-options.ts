@@ -1,9 +1,9 @@
 import { generateAuthenticationOptions, generateRegistrationOptions } from "@simplewebauthn/server";
 import { isoBase64URL } from "@simplewebauthn/server/helpers";
 
-import { cloudflareContext } from "~/.server/context";
-import { account, sessionContext } from "~/.server/session";
-import { issueChallenge, relyingParty, RP_NAME } from "~/.server/webauthn";
+import { cloudflareContext } from "~/app/.server/context";
+import { account, sessionContext } from "~/app/.server/session";
+import { issueChallenge, relyingParty, RP_NAME } from "~/app/.server/webauthn";
 
 import type { Route } from "./+types/passkeys-options";
 

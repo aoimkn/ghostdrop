@@ -1,9 +1,9 @@
 import { isoBase64URL } from "@simplewebauthn/server/helpers";
 
-import { cloudflareContext } from "~/.server/context";
-import { error, readJson } from "~/.server/http";
-import { passphraseSchema, verifier } from "~/.server/passphrase";
-import { account, sessionContext } from "~/.server/session";
+import { cloudflareContext } from "~/app/.server/context";
+import { error, readJson } from "~/app/.server/http";
+import { passphraseSchema, verifier } from "~/app/.server/passphrase";
+import { account, sessionContext } from "~/app/.server/session";
 
 import type { Route } from "./+types/passphrase";
 

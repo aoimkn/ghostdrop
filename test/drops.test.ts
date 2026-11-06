@@ -3,7 +3,7 @@ import { runDurableObjectAlarm, runInDurableObject } from "cloudflare:test";
 import { env, exports } from "cloudflare:workers";
 import { assert, describe, expect, it } from "vitest";
 
-import { openItem, openManifest, sealManifest, sealPart } from "~/lib/drop-crypto";
+import { openItem, openManifest, sealManifest, sealPart } from "~/app/lib/drop-crypto";
 import {
   MAX_DROP_BYTES,
   MAX_ITEMS,
@@ -12,8 +12,8 @@ import {
   partSize,
   RECORD_BYTES,
   sealedSize,
-} from "~/lib/drop-format";
-import { deriveKey, newParams, proof } from "~/lib/passphrase";
+} from "~/app/lib/drop-format";
+import { deriveKey, newParams, proof } from "~/app/lib/passphrase";
 
 import { SoftwareAuthenticator } from "./authenticator";
 import { Client, ORIGIN, signUpBody } from "./client";

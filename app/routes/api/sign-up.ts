@@ -1,11 +1,16 @@
 import { verifyRegistrationResponse } from "@simplewebauthn/server";
 import { z } from "zod";
 
-import { cloudflareContext } from "~/.server/context";
-import { error, readJson } from "~/.server/http";
-import { deviceNameSchema, newDeviceId, passphraseSchema, verifier } from "~/.server/passphrase";
-import { account, startSession } from "~/.server/session";
-import { redeemChallenge, registrationResponse, relyingParty } from "~/.server/webauthn";
+import { cloudflareContext } from "~/app/.server/context";
+import { error, readJson } from "~/app/.server/http";
+import {
+  deviceNameSchema,
+  newDeviceId,
+  passphraseSchema,
+  verifier,
+} from "~/app/.server/passphrase";
+import { account, startSession } from "~/app/.server/session";
+import { redeemChallenge, registrationResponse, relyingParty } from "~/app/.server/webauthn";
 
 import type { Route } from "./+types/sign-up";
 

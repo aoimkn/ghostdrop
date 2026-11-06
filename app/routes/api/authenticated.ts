@@ -1,4 +1,4 @@
-import { requireSession } from "~/.server/session";
+import { requireSession } from "~/app/.server/session";
 
 import type { Route } from "./+types/authenticated";
 

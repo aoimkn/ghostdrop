@@ -1,6 +1,6 @@
 import { createRequestHandler, RouterContextProvider } from "react-router";
 
-import { cloudflareContext } from "../app/.server/context";
+import { cloudflareContext } from "~/app/.server/context";
 
 export { Account } from "./account";
 export { Challenge } from "./challenge";

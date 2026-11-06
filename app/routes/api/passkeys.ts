@@ -1,16 +1,16 @@
 import { verifyRegistrationResponse } from "@simplewebauthn/server";
 import { z } from "zod";
 
-import { cloudflareContext } from "~/.server/context";
-import { error, readJson } from "~/.server/http";
-import { account, sessionContext } from "~/.server/session";
+import { cloudflareContext } from "~/app/.server/context";
+import { error, readJson } from "~/app/.server/http";
+import { account, sessionContext } from "~/app/.server/session";
 import {
   authenticationResponse,
   redeemChallenge,
   registrationResponse,
   relyingParty,
   verifyAssertion,
-} from "~/.server/webauthn";
+} from "~/app/.server/webauthn";
 
 import type { Route } from "./+types/passkeys";
 

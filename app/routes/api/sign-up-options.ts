@@ -1,8 +1,8 @@
 import { generateRegistrationOptions } from "@simplewebauthn/server";
 import { isoBase64URL } from "@simplewebauthn/server/helpers";
 
-import { cloudflareContext } from "~/.server/context";
-import { issueChallenge, newAccountId, relyingParty, RP_NAME } from "~/.server/webauthn";
+import { cloudflareContext } from "~/app/.server/context";
+import { issueChallenge, newAccountId, relyingParty, RP_NAME } from "~/app/.server/webauthn";
 
 import type { Route } from "./+types/sign-up-options";
 

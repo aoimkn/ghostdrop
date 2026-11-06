@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { deriveKey, isLongEnough, newParams, proof } from "~/lib/passphrase";
+import { deriveKey, isLongEnough, newParams, proof } from "~/app/lib/passphrase";
 
 const PASSPHRASE = "correct horse battery staple";
 

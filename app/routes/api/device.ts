@@ -1,9 +1,9 @@
 import { z } from "zod";
 
-import { cloudflareContext } from "~/.server/context";
-import { error, readJson } from "~/.server/http";
-import { deviceNameSchema } from "~/.server/passphrase";
-import { account, clearedSessionCookie, sessionContext } from "~/.server/session";
+import { cloudflareContext } from "~/app/.server/context";
+import { error, readJson } from "~/app/.server/http";
+import { deviceNameSchema } from "~/app/.server/passphrase";
+import { account, clearedSessionCookie, sessionContext } from "~/app/.server/session";
 
 import type { Route } from "./+types/device";
 

@@ -1,9 +1,9 @@
 import { isoBase64URL } from "@simplewebauthn/server/helpers";
 
-import { cloudflareContext } from "~/.server/context";
-import { error, readJson } from "~/.server/http";
-import { startSession } from "~/.server/session";
-import { authenticationResponse, redeemChallenge, verifyAssertion } from "~/.server/webauthn";
+import { cloudflareContext } from "~/app/.server/context";
+import { error, readJson } from "~/app/.server/http";
+import { startSession } from "~/app/.server/session";
+import { authenticationResponse, redeemChallenge, verifyAssertion } from "~/app/.server/webauthn";
 
 import type { Route } from "./+types/sign-in";
 

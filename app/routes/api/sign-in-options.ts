@@ -1,7 +1,7 @@
 import { generateAuthenticationOptions } from "@simplewebauthn/server";
 
-import { cloudflareContext } from "~/.server/context";
-import { issueChallenge, relyingParty } from "~/.server/webauthn";
+import { cloudflareContext } from "~/app/.server/context";
+import { issueChallenge, relyingParty } from "~/app/.server/webauthn";
 
 import type { Route } from "./+types/sign-in-options";
 

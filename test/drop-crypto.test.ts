@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { openItem, openManifest, sealManifest, sealPart, TamperedError } from "~/lib/drop-crypto";
+import {
+  openItem,
+  openManifest,
+  sealManifest,
+  sealPart,
+  TamperedError,
+} from "~/app/lib/drop-crypto";
 import {
   PART_BYTES,
   RECORD_BYTES,
@@ -8,8 +14,8 @@ import {
   paddedSize,
   partCount,
   sealedSize,
-} from "~/lib/drop-format";
-import { deriveKey, newParams } from "~/lib/passphrase";
+} from "~/app/lib/drop-format";
+import { deriveKey, newParams } from "~/app/lib/passphrase";
 
 const master = await deriveKey("correct horse battery staple", newParams());
 

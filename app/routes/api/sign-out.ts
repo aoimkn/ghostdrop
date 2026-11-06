@@ -1,5 +1,5 @@
-import { cloudflareContext } from "~/.server/context";
-import { account, clearedSessionCookie, sessionContext } from "~/.server/session";
+import { cloudflareContext } from "~/app/.server/context";
+import { account, clearedSessionCookie, sessionContext } from "~/app/.server/session";
 
 import type { Route } from "./+types/sign-out";
 

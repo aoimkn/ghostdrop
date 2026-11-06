@@ -6,7 +6,7 @@ import {
 import { decodeClientDataJSON, isoBase64URL } from "@simplewebauthn/server/helpers";
 import { z } from "zod";
 
-import type { ChallengePurpose } from "../../workers/challenge";
+import type { ChallengePurpose } from "~/workers/challenge";
 import { account } from "./session";
 
 export const RP_NAME = "ghostdrop";
