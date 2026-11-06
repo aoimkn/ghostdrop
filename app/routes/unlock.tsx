@@ -1,4 +1,3 @@
-import { LockSimpleIcon } from "@phosphor-icons/react/dist/csr/LockSimple";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
@@ -7,6 +6,7 @@ import { ApiError } from "~/app/lib/api.client";
 import { requireStage } from "~/app/ui/gate.client";
 import { m } from "~/app/paraglide/messages";
 import { Alert } from "~/app/ui/alert";
+import { DeviceName, LockedBadge } from "~/app/ui/device";
 import { errorMessage } from "~/app/ui/error-message";
 import { Field } from "~/app/ui/field";
 import { SignOutDialog } from "~/app/ui/sign-out-dialog";
@@ -64,10 +64,12 @@ export default function Unlock({ loaderData }: Route.ComponentProps) {
       >
         <div className="flex flex-col gap-2">
           {alert !== null && <Alert tone="warning">{alert}</Alert>}
-          <span className="gd-badge gd-badge--warning caption self-start">
-            <LockSimpleIcon size={14} aria-hidden />
-            {loaderData.deviceName}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="label inline-flex items-center gap-1">
+              <DeviceName name={loaderData.deviceName} />
+            </span>
+            <LockedBadge />
+          </div>
           <h1 className="title m-0">{m.device_unlock_title()}</h1>
           <p className="body m-0 text-ink-muted">{m.device_unlock_body()}</p>
         </div>

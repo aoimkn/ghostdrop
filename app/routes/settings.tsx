@@ -20,6 +20,7 @@ import { requireReady } from "~/app/ui/gate.client";
 import { m } from "~/app/paraglide/messages";
 import { getLocale, locales, setLocale } from "~/app/paraglide/runtime";
 import { Alert } from "~/app/ui/alert";
+import { LockedBadge } from "~/app/ui/device";
 import { Dialog } from "~/app/ui/dialog";
 import { errorMessage, isCancelledByUser } from "~/app/ui/error-message";
 import { Field } from "~/app/ui/field";
@@ -102,9 +103,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                 <div className="gd-device__name body">
                   <span>{device.name}</span>
                   {device.current && <span className="gd-badge caption">{m.device_current()}</span>}
-                  {device.locked && (
-                    <span className="gd-badge gd-badge--warning caption">{m.device_locked()}</span>
-                  )}
+                  {device.locked && <LockedBadge />}
                 </div>
                 <div className="gd-device__since caption">
                   {m.device_added_at({ date: formatDate(locale, device.createdAt) })}

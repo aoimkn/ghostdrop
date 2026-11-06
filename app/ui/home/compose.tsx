@@ -6,6 +6,7 @@ import { MAX_DROP_BYTES } from "~/app/lib/drop-format";
 import { formatSize, formatSizeOf } from "~/app/ui/format";
 import { m } from "~/app/paraglide/messages";
 import { Alert } from "~/app/ui/alert";
+import { LockedBadge } from "~/app/ui/device";
 import { TransferProgress } from "~/app/ui/progress";
 
 import type { Compose } from "./use-compose";
@@ -163,9 +164,7 @@ function Targets({
                 onChange={() => compose.setTarget(option.id)}
               />
               <span>{option.name}</span>
-              {option.locked && (
-                <span className="gd-badge gd-badge--warning caption">{m.device_locked()}</span>
-              )}
+              {option.locked && <LockedBadge />}
             </label>
           );
         })}

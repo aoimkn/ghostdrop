@@ -1,4 +1,3 @@
-import { DevicesIcon } from "@phosphor-icons/react/dist/csr/Devices";
 import { GearSixIcon } from "@phosphor-icons/react/dist/csr/GearSix";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { Link, useNavigate } from "react-router";
@@ -17,6 +16,7 @@ import { formatSize } from "~/app/ui/format";
 import { requireReady } from "~/app/ui/gate.client";
 import { m } from "~/app/paraglide/messages";
 import { Alert } from "~/app/ui/alert";
+import { DeviceName } from "~/app/ui/device";
 import { ComposePanel, Sources } from "~/app/ui/home/compose";
 import { DropRow, Route as DropRoute } from "~/app/ui/home/drop-row";
 import { ReceivedContent } from "~/app/ui/home/received";
@@ -109,8 +109,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       <Logo />
       <div className="flex items-center gap-2">
         <Link to="/settings" className="gd-button gd-button--subtle label min-h-11">
-          <DevicesIcon size={20} aria-hidden />
-          <span>{device.name}</span>
+          <DeviceName name={device.name} />
         </Link>
         <Link
           to="/settings"
