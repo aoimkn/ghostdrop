@@ -68,7 +68,7 @@ export function Sources({ compose, wide }: { compose: Compose; wide: boolean }) 
         compose.addTransfer(event.dataTransfer);
       }}
     >
-      <span>{over ? m.drop_zone_drag_over() : m.drop_zone_idle()}</span>
+      {(wide || over) && <span>{over ? m.drop_zone_drag_over() : m.drop_zone_idle()}</span>}
       <div
         className={wide ? "flex flex-wrap justify-center gap-2" : "grid w-full grid-cols-2 gap-2"}
       >

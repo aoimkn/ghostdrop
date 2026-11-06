@@ -35,7 +35,7 @@
   "device_current": "This device",
   "device_list_title": "Devices",
   "device_locked": "Locked",
-  "device_name_hint": "Shown when choosing where to send. Up to {max} characters.",
+  "device_name_hint": "Up to {max} characters",
   "device_name_label": "Device name",
   "device_other_count": [
     {
@@ -88,7 +88,7 @@
       }
     }
   ],
-  "drop_pending_empty": "Nothing pending. Send from another device and it shows up here.",
+  "drop_pending_empty": "Nothing pending.",
   "drop_pending_title": "Pending drops",
   "drop_pick": "Choose photos & files",
   "drop_receive": "Receive",
@@ -138,7 +138,7 @@
   "passkey_remove_body": "You won’t be able to sign in with it anymore. Delete it from your password manager too.",
   "passkey_remove_confirm": "Remove passkey",
   "passkey_remove_title": "Remove this passkey?",
-  "passphrase_hint": "At least {min} characters.",
+  "passphrase_hint": "At least {min} characters",
   "passphrase_label": "Passphrase",
   "passphrase_new_label": "New passphrase",
   "passphrase_new_title": "Replace passphrase",
