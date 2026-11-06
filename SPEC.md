@@ -46,6 +46,7 @@ The account, its devices, and for each drop: the sending device, the target devi
 
 - The server delivers the genuine client code. As with any web app doing client-side encryption, a malicious server could serve code that leaks keys; ghostdrop does not defend against this.
 - The owner's devices are not compromised.
+- The passphrase resists guessing. Anyone holding the server's data can try passphrases offline, so the guarantees above are only as strong as the passphrase.
 
 ## 4. Accounts & devices
 
@@ -139,4 +140,5 @@ Rationale: these three are the only types the Clipboard API requires browsers to
 | Expiry period                     | TBD                           |
 | Maximum drop size                 | 100 MB                        |
 | Maximum pending drops per account | TBD                           |
+| Minimum passphrase length         | 15 characters                 |
 | Session lifetime                  | 30 days, extended on each use |
