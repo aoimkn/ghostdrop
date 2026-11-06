@@ -4,12 +4,13 @@ import { useNavigate } from "react-router";
 import { addDevice, signOut } from "~/app/lib/account.client";
 import { ApiError } from "~/app/lib/api.client";
 import { isValidDeviceName } from "~/app/lib/device-name";
-import { requireStage } from "~/app/lib/gate.client";
+import { requireStage } from "~/app/ui/gate.client";
 import { m } from "~/app/paraglide/messages";
 import { Alert } from "~/app/ui/alert";
 import { errorMessage } from "~/app/ui/error-message";
 import { Field } from "~/app/ui/field";
 import { useLockout } from "~/app/ui/use-lockout";
+import { Column } from "~/app/ui/page";
 
 export async function clientLoader() {
   await requireStage("no-device");
@@ -59,7 +60,7 @@ export default function AddDevice() {
   };
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-[440px] flex-col justify-between gap-6 px-4 py-6">
+    <Column spread>
       <form
         id="add-device"
         className="flex flex-col gap-6 pt-12"
@@ -111,6 +112,6 @@ export default function AddDevice() {
           {m.account_sign_out()}
         </button>
       </div>
-    </main>
+    </Column>
   );
 }

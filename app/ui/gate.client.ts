@@ -1,8 +1,8 @@
 import { redirect } from "react-router";
 
-import { getSession, type Session } from "./account.client";
+import { getSession, type Session } from "~/app/lib/account.client";
 
-export type Stage = "signed-out" | "no-device" | "locked" | "ready";
+type Stage = "signed-out" | "no-device" | "locked" | "ready";
 
 const HOME: Record<Stage, string> = {
   "signed-out": "/sign-in",

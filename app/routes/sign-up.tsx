@@ -3,13 +3,13 @@ import { useNavigate } from "react-router";
 
 import { signUp } from "~/app/lib/account.client";
 import { isValidDeviceName } from "~/app/lib/device-name";
-import { requireStage } from "~/app/lib/gate.client";
+import { requireStage } from "~/app/ui/gate.client";
 import { isLongEnough } from "~/app/lib/passphrase";
 import { m } from "~/app/paraglide/messages";
 import { Alert } from "~/app/ui/alert";
 import { errorMessage, isCancelledByUser } from "~/app/ui/error-message";
 import { Field } from "~/app/ui/field";
-import { Column, PageHeader } from "~/app/ui/page-header";
+import { BackHeader, Column } from "~/app/ui/page";
 
 export async function clientLoader() {
   await requireStage("signed-out");
@@ -43,7 +43,9 @@ export default function SignUp() {
 
   return (
     <Column>
-      <PageHeader back="/sign-in">{m.account_sign_up_title()}</PageHeader>
+      <BackHeader to="/sign-in">
+        <h1 className="title m-0">{m.account_sign_up_title()}</h1>
+      </BackHeader>
       {error !== null && <Alert tone="warning">{error}</Alert>}
       <form
         className="flex flex-1 flex-col gap-6"

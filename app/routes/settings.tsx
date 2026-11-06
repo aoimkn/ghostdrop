@@ -15,15 +15,15 @@ import {
 import { ApiError } from "~/app/lib/api.client";
 import { isValidDeviceName } from "~/app/lib/device-name";
 import { listDrops } from "~/app/lib/drops.client";
-import { formatDate } from "~/app/lib/format";
-import { requireReady } from "~/app/lib/gate.client";
+import { formatDate } from "~/app/ui/format";
+import { requireReady } from "~/app/ui/gate.client";
 import { m } from "~/app/paraglide/messages";
 import { getLocale, locales, setLocale } from "~/app/paraglide/runtime";
 import { Alert } from "~/app/ui/alert";
 import { Dialog } from "~/app/ui/dialog";
 import { errorMessage, isCancelledByUser } from "~/app/ui/error-message";
 import { Field } from "~/app/ui/field";
-import { Column, PageHeader } from "~/app/ui/page-header";
+import { BackHeader, Column } from "~/app/ui/page";
 import { SignOutDialog } from "~/app/ui/sign-out-dialog";
 
 import type { Route } from "./+types/settings";
@@ -88,7 +88,9 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
 
   return (
     <Column>
-      <PageHeader back="/">{m.account_settings()}</PageHeader>
+      <BackHeader to="/">
+        <h1 className="title m-0">{m.account_settings()}</h1>
+      </BackHeader>
       {alert !== null && <Alert tone="danger">{alert}</Alert>}
 
       <section className="flex flex-col gap-2">

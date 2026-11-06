@@ -3,14 +3,14 @@ import { useNavigate } from "react-router";
 
 import { listDevices, replacePassphrase } from "~/app/lib/account.client";
 import { listDrops } from "~/app/lib/drops.client";
-import { requireReady } from "~/app/lib/gate.client";
+import { requireReady } from "~/app/ui/gate.client";
 import { isLongEnough } from "~/app/lib/passphrase";
 import { m } from "~/app/paraglide/messages";
 import { Alert } from "~/app/ui/alert";
 import { Dialog } from "~/app/ui/dialog";
 import { errorMessage } from "~/app/ui/error-message";
 import { Field } from "~/app/ui/field";
-import { Column, PageHeader } from "~/app/ui/page-header";
+import { BackHeader, Column } from "~/app/ui/page";
 
 import type { Route } from "./+types/replace-passphrase";
 
@@ -50,7 +50,9 @@ export default function ReplacePassphrase({ loaderData }: Route.ComponentProps) 
 
   return (
     <Column>
-      <PageHeader back="/settings">{m.passphrase_new_title()}</PageHeader>
+      <BackHeader to="/settings">
+        <h1 className="title m-0">{m.passphrase_new_title()}</h1>
+      </BackHeader>
       {alert !== null && <Alert tone="danger">{alert}</Alert>}
       <form
         className="flex flex-1 flex-col gap-4"

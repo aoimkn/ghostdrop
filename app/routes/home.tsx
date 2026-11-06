@@ -1,11 +1,10 @@
-import { CaretLeftIcon } from "@phosphor-icons/react/dist/csr/CaretLeft";
 import { DevicesIcon } from "@phosphor-icons/react/dist/csr/Devices";
 import { GearSixIcon } from "@phosphor-icons/react/dist/csr/GearSix";
-import { type ReactNode, useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { Link, useNavigate } from "react-router";
 
 import { listDevices } from "~/app/lib/account.client";
-import type { Item } from "~/app/lib/content";
+import { type Item, totalSize } from "~/app/lib/content";
 import { MAX_PENDING_DROPS } from "~/app/lib/drop-format";
 import {
   deleteDrop,
@@ -14,17 +13,18 @@ import {
   LockedError,
   receiveDrop,
 } from "~/app/lib/drops.client";
-import { formatSize, formatSizeOf } from "~/app/lib/format";
-import { requireReady } from "~/app/lib/gate.client";
+import { formatSize } from "~/app/ui/format";
+import { requireReady } from "~/app/ui/gate.client";
 import { m } from "~/app/paraglide/messages";
 import { Alert } from "~/app/ui/alert";
 import { ComposePanel, Sources } from "~/app/ui/home/compose";
 import { DropRow, Route as DropRoute } from "~/app/ui/home/drop-row";
-import { ReceivedContent, totalSize } from "~/app/ui/home/received";
+import { ReceivedContent } from "~/app/ui/home/received";
 import { useCompose } from "~/app/ui/home/use-compose";
 import { type Entry, useDrops } from "~/app/ui/home/use-drops";
 import { Logo } from "~/app/ui/logo";
-import { ProgressBar } from "~/app/ui/progress";
+import { BackHeader, Column } from "~/app/ui/page";
+import { TransferProgress } from "~/app/ui/progress";
 import { useNow } from "~/app/ui/use-now";
 
 import type { Route } from "./+types/home";
@@ -48,22 +48,6 @@ function useWide(): boolean {
       return () => query.removeEventListener("change", onChange);
     },
     () => window.matchMedia(WIDE).matches,
-  );
-}
-
-function BackHeader({ onBack, children }: { onBack: () => void; children: ReactNode }) {
-  return (
-    <header className="flex min-h-11 items-center gap-2">
-      <button
-        type="button"
-        className="gd-button gd-button--subtle label min-h-11 min-w-11"
-        aria-label={m.common_back()}
-        onClick={onBack}
-      >
-        <CaretLeftIcon size={24} aria-hidden />
-      </button>
-      {children}
-    </header>
   );
 }
 
@@ -154,6 +138,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           key={entry.drop.id}
           drop={entry.drop}
           meta={entry.meta}
+          size={entry.size}
           fresh={entry.fresh}
           receivable={isReceivable(entry.drop, device.id)}
           receiving={
@@ -210,16 +195,12 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     );
   }
 
-  const phoneColumn = "mx-auto flex min-h-dvh w-full max-w-[440px] flex-col gap-6 px-4 pt-4 pb-6";
-
   if (receiving || received) {
     const drop = receiving?.entry.drop ?? received?.drop;
-    const size = received
-      ? totalSize(received.items)
-      : (receiving?.entry.meta.reduce((sum, item) => sum + item.size, 0) ?? 0);
+    const size = received ? totalSize(received.items) : (receiving?.entry.size ?? 0);
     const count = received?.items.length ?? receiving?.entry.meta.length ?? 0;
     return (
-      <main className={phoneColumn}>
+      <Column>
         <BackHeader
           onBack={() => {
             setReceiving(null);
@@ -246,18 +227,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <>
               {receiving.failed && <Alert tone="danger">{m.drop_receive_failed()}</Alert>}
               <section className="flex flex-col gap-2 rounded-md bg-surface-raised p-4">
-                <div className="flex items-baseline justify-between gap-4">
-                  <span className="label text-ink-muted">
-                    {receiving.failed ? m.drop_receive_failed() : m.drop_receive_in_progress()}
-                  </span>
-                  <span className="mono text-ink-muted">
-                    {formatSizeOf(receiving.progress * size, size)}
-                  </span>
-                </div>
-                <ProgressBar
-                  label={m.drop_receive_in_progress()}
+                <TransferProgress
+                  label={receiving.failed ? m.drop_receive_failed() : m.drop_receive_in_progress()}
                   fraction={receiving.progress}
-                  stopped={receiving.failed}
+                  total={size}
+                  failed={receiving.failed}
                 />
               </section>
               {receiving.failed && (
@@ -274,13 +248,13 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             </>
           )
         )}
-      </main>
+      </Column>
     );
   }
 
   if (compose.open) {
     return (
-      <main className={phoneColumn}>
+      <Column>
         <ComposePanel
           compose={compose}
           devices={devices}
@@ -292,15 +266,15 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             </BackHeader>
           }
         />
-      </main>
+      </Column>
     );
   }
 
   return (
-    <main className={phoneColumn}>
+    <Column>
       {header}
       <Sources compose={compose} wide={false} />
       {pending}
-    </main>
+    </Column>
   );
 }

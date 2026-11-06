@@ -1,5 +1,5 @@
 import { ApiError } from "~/app/lib/api.client";
-import { formatTime } from "~/app/lib/format";
+import { formatTime } from "~/app/ui/format";
 import { MAX_PENDING_DROPS } from "~/app/lib/drop-format";
 import { m } from "~/app/paraglide/messages";
 import { getLocale } from "~/app/paraglide/runtime";

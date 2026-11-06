@@ -2,13 +2,9 @@ import { DownloadSimpleIcon } from "@phosphor-icons/react/dist/csr/DownloadSimpl
 import { ExportIcon } from "@phosphor-icons/react/dist/csr/Export";
 import { useEffect, useState } from "react";
 
-import { type Item, planOutput, toClipboardItem, toFile } from "~/app/lib/content";
-import { formatSize } from "~/app/lib/format";
+import { type Item, planOutput, toClipboardItem, toFile, totalSize } from "~/app/lib/content";
+import { formatSize } from "~/app/ui/format";
 import { m } from "~/app/paraglide/messages";
-
-function size(items: readonly Item[]): number {
-  return items.reduce((sum, item) => sum + item.content.size, 0);
-}
 
 function canShare(file: File): boolean {
   return typeof navigator.canShare === "function" && navigator.canShare({ files: [file] });
@@ -32,7 +28,7 @@ function ClipboardEntry({ entry, surface }: { entry: readonly Item[]; surface: s
   return (
     <div className={`flex flex-col gap-4 rounded-md p-4 ${surface}`}>
       <div className="mono text-ink-muted">
-        {entry.map((item) => item.type).join(", ")} &middot; {formatSize(size(entry))}
+        {entry.map((item) => item.type).join(", ")} &middot; {formatSize(totalSize(entry))}
       </div>
       {preview !== null && <p className="body m-0 line-clamp-3 break-words">{preview}</p>}
       <button
@@ -112,8 +108,4 @@ export function ReceivedContent({
       )}
     </>
   );
-}
-
-export function totalSize(items: readonly Item[]): number {
-  return size(items);
 }

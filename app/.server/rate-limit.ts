@@ -15,7 +15,7 @@ export const limitAuthAttempts: MiddlewareFunction<Response> = async (
 };
 
 // One IPv6 holder usually controls a whole /64, so IPv6 addresses are counted by prefix.
-export function networkOf(request: Request): string {
+function networkOf(request: Request): string {
   const address = request.headers.get("CF-Connecting-IP") ?? "";
   if (!address.includes(":")) return address;
   const [head = "", tail] = address.toLowerCase().split("::");

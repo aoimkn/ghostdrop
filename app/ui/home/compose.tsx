@@ -1,23 +1,14 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { Device } from "~/app/lib/account.client";
-import type { Item } from "~/app/lib/content";
+import { groupEntries, type Item, totalSize } from "~/app/lib/content";
 import { MAX_DROP_BYTES } from "~/app/lib/drop-format";
-import { formatSize, formatSizeOf } from "~/app/lib/format";
+import { formatSize, formatSizeOf } from "~/app/ui/format";
 import { m } from "~/app/paraglide/messages";
 import { Alert } from "~/app/ui/alert";
-import { ProgressBar } from "~/app/ui/progress";
+import { TransferProgress } from "~/app/ui/progress";
 
 import type { Compose } from "./use-compose";
-
-function groups(items: readonly Item[]): Item[][] {
-  const byGroup = new Map<string | Item, Item[]>();
-  for (const item of items) {
-    const key = item.group ?? item;
-    byGroup.set(key, [...(byGroup.get(key) ?? []), item]);
-  }
-  return [...byGroup.values()];
-}
 
 function ItemRows({
   items,
@@ -28,10 +19,9 @@ function ItemRows({
 }) {
   return (
     <div className="flex flex-col rounded-md bg-surface-raised">
-      {groups(items).map((group, index) => {
+      {groupEntries(items).map((group, index) => {
         const [first] = group;
         if (!first) return null;
-        const size = group.reduce((sum, item) => sum + item.content.size, 0);
         return (
           <div
             key={index}
@@ -40,7 +30,7 @@ function ItemRows({
             <div className="flex min-w-0 flex-1 flex-col">
               {first.name !== null && <span className="body break-all">{first.name}</span>}
               <span className="mono text-ink-muted">
-                {group.map((item) => item.type).join(", ")} &middot; {formatSize(size)}
+                {group.map((item) => item.type).join(", ")} &middot; {formatSize(totalSize(group))}
               </span>
             </div>
             {onRemove && (
@@ -200,19 +190,12 @@ function Progress({
     <div
       className={`flex flex-col gap-4 rounded-md p-4 ${inset ? "bg-surface-sunken" : "bg-surface-raised"}`}
     >
-      <div className="flex items-baseline justify-between gap-4">
-        <span className={`label ${failed ? "text-ink-muted" : ""}`}>
-          {failed ? m.drop_send_failed() : m.drop_send_in_progress()}
-        </span>
-        <span className="mono text-ink-muted">
-          {formatSizeOf(compose.progress * compose.bytes, compose.bytes)}
-        </span>
-      </div>
-      <ProgressBar
-        className={inset ? "bg-surface" : ""}
-        label={m.drop_send_in_progress()}
+      <TransferProgress
+        label={failed ? m.drop_send_failed() : m.drop_send_in_progress()}
         fraction={compose.progress}
-        stopped={failed}
+        total={compose.bytes}
+        failed={failed}
+        inset={inset}
       />
       <span className="gd-drop__route label text-ink-muted">
         <span>{deviceName}</span>

@@ -8,6 +8,7 @@ import {
   fromFiles,
   fromText,
   type Item,
+  totalSize,
   type Transfer,
 } from "~/app/lib/content";
 import { MAX_DROP_BYTES, MAX_ITEMS } from "~/app/lib/drop-format";
@@ -15,7 +16,7 @@ import { LockedError, sendDrop } from "~/app/lib/drops.client";
 import { m } from "~/app/paraglide/messages";
 import { errorMessage } from "~/app/ui/error-message";
 
-export type Phase = "editing" | "sending" | "failed";
+type Phase = "editing" | "sending" | "failed";
 
 const REFUSALS = new Set(["limit-reached", "rate-limited", "too-large", "too-many-items"]);
 
@@ -30,7 +31,7 @@ export function useCompose({ onSent, onLocked }: { onSent: () => void; onLocked:
   const abort = useRef<AbortController | null>(null);
 
   const all = writing && text.length > 0 ? [...fromText(text), ...items] : items;
-  const bytes = all.reduce((sum, item) => sum + item.content.size, 0);
+  const bytes = totalSize(all);
   const overLimit = bytes > MAX_DROP_BYTES || all.length > MAX_ITEMS;
 
   const add = (added: Item[]) => {

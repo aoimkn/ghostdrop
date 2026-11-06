@@ -4,13 +4,14 @@ import { useNavigate } from "react-router";
 
 import { unlockDevice } from "~/app/lib/account.client";
 import { ApiError } from "~/app/lib/api.client";
-import { requireStage } from "~/app/lib/gate.client";
+import { requireStage } from "~/app/ui/gate.client";
 import { m } from "~/app/paraglide/messages";
 import { Alert } from "~/app/ui/alert";
 import { errorMessage } from "~/app/ui/error-message";
 import { Field } from "~/app/ui/field";
 import { SignOutDialog } from "~/app/ui/sign-out-dialog";
 import { useLockout } from "~/app/ui/use-lockout";
+import { Column } from "~/app/ui/page";
 
 import type { Route } from "./+types/unlock";
 
@@ -52,7 +53,7 @@ export default function Unlock({ loaderData }: Route.ComponentProps) {
   };
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-[440px] flex-col justify-between gap-6 px-4 py-6">
+    <Column spread>
       <form
         id="unlock"
         className="flex flex-col gap-6 pt-12"
@@ -99,6 +100,6 @@ export default function Unlock({ loaderData }: Route.ComponentProps) {
         </button>
       </div>
       {signingOut && <SignOutDialog onCancel={() => setSigningOut(false)} />}
-    </main>
+    </Column>
   );
 }

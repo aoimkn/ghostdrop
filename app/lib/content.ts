@@ -20,7 +20,7 @@ type TransferItem = {
   webkitGetAsEntry?(): { readonly isDirectory: boolean } | null;
 };
 
-export type OutputPlan = { clipboard: Item[][]; files: Item[] };
+type OutputPlan = { clipboard: Item[][]; files: Item[] };
 
 const CLIPBOARD_TYPES = new Set(["text/plain", "text/html", "image/png"]);
 const UNKNOWN_TYPE = "application/octet-stream";
@@ -68,18 +68,24 @@ export function fromDataTransfer(transfer: Transfer): Item[] {
   return [...strings, ...fromFiles(files)];
 }
 
-export function planOutput(items: readonly Item[]): OutputPlan {
-  const clipboard = new Map<string | Item, Item[]>();
-  const files: Item[] = [];
+export function groupEntries(items: readonly Item[]): Item[][] {
+  const byGroup = new Map<string | Item, Item[]>();
   for (const item of items) {
-    if (!isClipboardType(item.type)) {
-      files.push(item);
-      continue;
-    }
     const key = item.group ?? item;
-    clipboard.set(key, [...(clipboard.get(key) ?? []), item]);
+    byGroup.set(key, [...(byGroup.get(key) ?? []), item]);
   }
-  return { clipboard: [...clipboard.values()], files };
+  return [...byGroup.values()];
+}
+
+export function totalSize(items: readonly Item[]): number {
+  return items.reduce((sum, item) => sum + item.content.size, 0);
+}
+
+export function planOutput(items: readonly Item[]): OutputPlan {
+  return {
+    clipboard: groupEntries(items.filter((item) => isClipboardType(item.type))),
+    files: items.filter((item) => !isClipboardType(item.type)),
+  };
 }
 
 export function toClipboardItem(entry: readonly Item[]): ClipboardItem {

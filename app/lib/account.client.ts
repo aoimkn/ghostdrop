@@ -54,9 +54,9 @@ export type Device = z.infer<typeof device>;
 
 export type Session = z.infer<typeof session> & { unlocked: boolean };
 
-export class PassphraseTooShortError extends Error {}
+class PassphraseTooShortError extends Error {}
 
-export class InvalidDeviceNameError extends Error {}
+class InvalidDeviceNameError extends Error {}
 
 export async function signUp(passphrase: string, deviceName: string): Promise<void> {
   requireValidName(deviceName);

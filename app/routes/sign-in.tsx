@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 
 import { signIn } from "~/app/lib/account.client";
-import { requireStage } from "~/app/lib/gate.client";
+import { requireStage } from "~/app/ui/gate.client";
 import { m } from "~/app/paraglide/messages";
 import { Alert } from "~/app/ui/alert";
 import { errorMessage, isCancelledByUser } from "~/app/ui/error-message";
 import { Logo } from "~/app/ui/logo";
+import { Column } from "~/app/ui/page";
 
 export async function clientLoader() {
   await requireStage("signed-out");
@@ -36,7 +37,7 @@ export default function SignIn() {
   };
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-[440px] flex-col justify-between gap-6 px-4 py-6">
+    <Column spread>
       <div className="pt-30">
         <Logo className="display text-[40px]" />
       </div>
@@ -56,6 +57,6 @@ export default function SignIn() {
         </Link>
         <p className="caption mt-2 mb-0 text-center text-ink-muted">{m.account_passkey_hint()}</p>
       </div>
-    </main>
+    </Column>
   );
 }

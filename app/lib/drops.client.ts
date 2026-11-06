@@ -32,13 +32,13 @@ export type Drop = z.infer<typeof drop>;
 
 export class LockedError extends Error {}
 
-export class DropTooLargeError extends Error {}
+class DropTooLargeError extends Error {}
 
-export class TooManyItemsError extends Error {}
+class TooManyItemsError extends Error {}
 
-export class MismatchedDropError extends Error {}
+class MismatchedDropError extends Error {}
 
-export type Progress = (fraction: number) => void;
+type Progress = (fraction: number) => void;
 
 export async function sendDrop(
   items: Item[],
