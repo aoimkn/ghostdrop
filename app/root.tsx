@@ -10,6 +10,7 @@ import {
   type MiddlewareFunction,
 } from "react-router";
 
+import { m } from "./paraglide/messages";
 import { getLocale } from "./paraglide/runtime";
 import { paraglideMiddleware } from "./paraglide/server";
 import { ErrorScreen } from "./ui/error-screen";
@@ -20,6 +21,27 @@ import type { Route } from "./+types/root";
 
 export const middleware: MiddlewareFunction<Response>[] = [
   ({ request }, next) => paraglideMiddleware(request, () => next()),
+];
+
+export function loader({ request }: Route.LoaderArgs) {
+  return { origin: new URL(request.url).origin };
+}
+
+// The origin never changes while the app is open, so client navigations need not ask the server.
+export function shouldRevalidate() {
+  return false;
+}
+
+export const meta: Route.MetaFunction = ({ loaderData }) => [
+  { title: "ghostdrop" },
+  { name: "description", content: m.common_description() },
+  { property: "og:type", content: "website" },
+  { property: "og:title", content: "ghostdrop" },
+  { property: "og:description", content: m.common_description() },
+  { property: "og:image", content: `${loaderData?.origin ?? ""}/og.png` },
+  { property: "og:image:width", content: "1200" },
+  { property: "og:image:height", content: "630" },
+  { name: "twitter:card", content: "summary_large_image" },
 ];
 
 export const links: LinksFunction = () => [
