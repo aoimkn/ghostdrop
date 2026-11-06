@@ -13,6 +13,7 @@ import {
 const itemMeta = z.object({
   type: z.string(),
   name: z.string().nullable(),
+  group: z.number().int().nonnegative().nullable(),
   size: z.number().int().nonnegative(),
 });
 

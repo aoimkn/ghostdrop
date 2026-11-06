@@ -130,7 +130,7 @@ describe("sending and receiving", () => {
     const manifest = await sealManifest(
       master,
       dropId,
-      items.map(({ type, name, content }) => ({ type, name, size: content.size })),
+      items.map(({ type, name, content }) => ({ type, name, group: null, size: content.size })),
     );
     expect(
       (

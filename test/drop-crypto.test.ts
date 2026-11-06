@@ -127,8 +127,8 @@ describe("padding", () => {
 
 describe("manifest", () => {
   const items = [
-    { type: "text/plain", name: null, size: 5 },
-    { type: "image/png", name: "screenshot.png", size: 1234 },
+    { type: "text/plain", name: null, group: 0, size: 5 },
+    { type: "image/png", name: "screenshot.png", group: null, size: 1234 },
   ];
 
   it("round-trips", async () => {

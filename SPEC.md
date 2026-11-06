@@ -125,10 +125,12 @@ New content — created within ghostdrop for the drop:
 
 Every item is carried as-is: original MIME type and bytes, no conversion.
 
+When content arrives in several formats and some of them can be written to a clipboard (see Output), only those are sent.
+
 ### Output
 
 - Items of type `text/plain`, `text/html` or `image/png` can be written to the receiving device's clipboard.
-- Items read together from the clipboard as alternative formats of the same content (e.g. rich text with a plain-text fallback) are written back to the clipboard together.
+- Items read together from the clipboard as alternative formats of the same content (e.g. rich text with a plain-text fallback) are written to the receiving device's clipboard together.
 - All other items are delivered as a download or through the share sheet.
 
 Rationale: these three are the only types the Clipboard API requires browsers to support for writing. Others (e.g. `image/jpeg`) are rejected by some browsers, so they are not offered as clipboard targets.

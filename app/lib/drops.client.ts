@@ -4,6 +4,7 @@ import { z } from "zod";
 import { call, request } from "./api.client";
 import { type ItemMeta, openItem, openManifest, sealManifest, sealPart } from "./drop-crypto";
 import { MAX_DROP_BYTES, MAX_ITEMS, paddedSize, partCount } from "./drop-format";
+import type { Item } from "./content";
 import { loadKey } from "./keystore.client";
 
 const UPLOAD_CONCURRENCY = 3;
@@ -22,10 +23,6 @@ const drop = z.object({
 
 export type Drop = z.infer<typeof drop>;
 
-export type OutgoingItem = { type: string; name: string | null; content: Blob };
-
-export type ReceivedItem = { type: string; name: string | null; content: Blob };
-
 export class LockedError extends Error {}
 
 export class DropTooLargeError extends Error {}
@@ -34,7 +31,7 @@ export class TooManyItemsError extends Error {}
 
 export class MismatchedDropError extends Error {}
 
-export async function sendDrop(items: OutgoingItem[], target: string | null): Promise<void> {
+export async function sendDrop(items: Item[], target: string | null): Promise<void> {
   const master = await requireKey();
   const total = items.reduce((sum, { content }) => sum + content.size, 0);
   if (total > MAX_DROP_BYTES) throw new DropTooLargeError();
@@ -56,9 +53,13 @@ export async function sendDrop(items: OutgoingItem[], target: string | null): Pr
       }),
     );
     await runConcurrently(jobs, UPLOAD_CONCURRENCY);
-    const meta: ItemMeta[] = items.map(({ type, name, content }) => ({
+    const groupNumbers = [
+      ...new Set(items.flatMap(({ group }) => (group === null ? [] : [group]))),
+    ];
+    const meta: ItemMeta[] = items.map(({ type, name, group, content }) => ({
       type,
       name,
+      group: group === null ? null : groupNumbers.indexOf(group),
       size: content.size,
     }));
     await call("POST", `/api/drops/${id}/complete`, {
@@ -80,7 +81,7 @@ export function isReceivable(candidate: Drop, deviceId: string): boolean {
     : candidate.target.id === deviceId;
 }
 
-export async function receiveDrop(candidate: Drop): Promise<ReceivedItem[]> {
+export async function receiveDrop(candidate: Drop): Promise<Item[]> {
   const master = await requireKey();
   const dropId = decode(candidate.id);
   const meta = await openManifest(master, dropId, decode(candidate.manifest));
@@ -90,7 +91,7 @@ export async function receiveDrop(candidate: Drop): Promise<ReceivedItem[]> {
   ) {
     throw new MismatchedDropError();
   }
-  const received: ReceivedItem[] = [];
+  const received: Item[] = [];
   for (const [index, item] of meta.entries()) {
     const response = await request("GET", `/api/drops/${candidate.id}/items/${index}`);
     if (!response.body) throw new MismatchedDropError();
@@ -98,6 +99,7 @@ export async function receiveDrop(candidate: Drop): Promise<ReceivedItem[]> {
     received.push({
       type: item.type,
       name: item.name,
+      group: item.group === null ? null : String(item.group),
       content: new Blob(plain, { type: item.type }),
     });
   }
