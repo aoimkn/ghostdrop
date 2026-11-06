@@ -62,6 +62,19 @@ describe("adding a device", () => {
     expect((await addDevice(client, "   ", passphrase.proof)).status).toBe(400);
   });
 
+  it("accepts names of up to 32 characters, counting code points", async () => {
+    const { authenticator, passphrase } = await signUp();
+    const { client } = await signIn(authenticator);
+    expect((await addDevice(client, "a".repeat(33), passphrase.proof)).status).toBe(400);
+    expect((await addDevice(client, "😀".repeat(33), passphrase.proof)).status).toBe(400);
+    expect((await addDevice(client, ` ${"😀".repeat(32)} `, passphrase.proof)).status).toBe(204);
+    const [, device] = await client.json<Device[]>("GET", "/api/devices");
+    assert(device !== undefined);
+    const rename = (name: string) => client.request("PATCH", `/api/devices/${device.id}`, { name });
+    expect((await rename("b".repeat(33))).status).toBe(400);
+    expect((await rename("b".repeat(32))).status).toBe(204);
+  });
+
   it("treats canonically equivalent names as the same", async () => {
     const { authenticator, passphrase } = await signUp();
     const { client } = await signIn(authenticator);

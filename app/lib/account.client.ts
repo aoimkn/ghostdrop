@@ -12,6 +12,7 @@ import { z } from "zod";
 
 import { ApiError, call } from "./api.client";
 import { clearKey, loadKey, saveKey } from "./keystore.client";
+import { isValidDeviceName } from "./device-name";
 import { deriveKey, isLongEnough, newParams, proof } from "./passphrase";
 
 const creationOptions = z.looseObject({
@@ -55,7 +56,10 @@ export type Session = z.infer<typeof session> & { unlocked: boolean };
 
 export class PassphraseTooShortError extends Error {}
 
+export class InvalidDeviceNameError extends Error {}
+
 export async function signUp(passphrase: string, deviceName: string): Promise<void> {
+  requireValidName(deviceName);
   const { params, key } = await newPassphrase(passphrase);
   const optionsJSON = creationOptions.parse(await call("POST", "/api/sign-up/options"));
   await call("POST", "/api/sign-up", {
@@ -97,6 +101,7 @@ export async function getSession(): Promise<Session | null> {
 }
 
 export async function addDevice(passphrase: string, name: string): Promise<void> {
+  requireValidName(name);
   const key = await existingPassphrase(passphrase);
   await call("POST", "/api/devices", { name, proof: encode(await proof(key)) });
   await saveKey(key);
@@ -119,6 +124,7 @@ export async function listDevices(): Promise<Device[]> {
 }
 
 export async function renameDevice(id: string, name: string): Promise<void> {
+  requireValidName(name);
   await call("PATCH", `/api/devices/${encodeURIComponent(id)}`, { name });
 }
 
@@ -143,6 +149,10 @@ export async function addPasskey(): Promise<void> {
 
 export async function removePasskey(id: string): Promise<void> {
   await call("DELETE", `/api/passkeys/${encodeURIComponent(id)}`);
+}
+
+function requireValidName(name: string): void {
+  if (!isValidDeviceName(name)) throw new InvalidDeviceNameError();
 }
 
 async function newPassphrase(passphrase: string) {

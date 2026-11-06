@@ -151,7 +151,7 @@ Rationale: these three are the only types the Clipboard API requires browsers to
 | Maximum items per drop                   | 100                           |
 | Upload timeout                           | 1 hour                        |
 | Minimum passphrase length                | 15 characters                 |
-| Maximum device name length               | TBD                           |
+| Maximum device name length               | 32 characters                 |
 | Session lifetime                         | 30 days, extended on each use |
 | Sign-up and sign-in attempts per network | About 10 per minute           |
 | Wrong passphrase entries per account     | 10 per hour                   |

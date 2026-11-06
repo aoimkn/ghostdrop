@@ -1,3 +1,5 @@
+import { codePointCount } from "./text";
+
 const VERSION = 1;
 const SALT_BYTES = 16;
 // OWASP's recommendation for PBKDF2-HMAC-SHA256. Argon2id is preferable but no browser
@@ -11,9 +13,7 @@ export function normalize(passphrase: string): string {
 
 // Length counts Unicode code points, as NIST SP 800-63B specifies, not grapheme clusters.
 export function isLongEnough(passphrase: string): boolean {
-  let codePoints = 0;
-  for (const _ of normalize(passphrase)) codePoints++;
-  return codePoints >= MIN_LENGTH;
+  return codePointCount(normalize(passphrase)) >= MIN_LENGTH;
 }
 
 export function newParams(): Uint8Array<ArrayBuffer> {
