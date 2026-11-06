@@ -91,7 +91,8 @@ The owner can delete their account. Its passkeys, devices and pending drops are 
 
 ### Pending drops
 
-- An account can hold multiple pending drops.
+- An account can hold multiple pending drops, up to a limit.
+- A drop sent while the account is at the limit is rejected. Existing drops are never removed to make room, since a burn cannot be undone.
 - Every eligible device sees the pending drops addressed to it: those targeted at it, and untargeted ones it did not send.
 - Online devices are notified when a new drop arrives.
 - Any device of the account can delete a pending drop without receiving it.
@@ -140,9 +141,9 @@ Rationale: these three are the only types the Clipboard API requires browsers to
 
 | Limit                             | Value                         |
 | --------------------------------- | ----------------------------- |
-| Expiry period                     | TBD                           |
+| Expiry period                     | 24 hours                      |
 | Maximum drop size                 | 100 MB                        |
-| Maximum pending drops per account | TBD                           |
+| Maximum pending drops per account | 10                            |
 | Minimum passphrase length         | 15 characters                 |
 | Maximum device name length        | TBD                           |
 | Session lifetime                  | 30 days, extended on each use |
