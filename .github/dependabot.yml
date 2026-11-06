@@ -4,6 +4,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # pnpm refuses releases younger than a day, so a fresher proposal would fail to install.
+    cooldown:
+      default-days: 1
     groups:
       npm:
         patterns: ["*"]
