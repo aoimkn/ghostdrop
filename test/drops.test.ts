@@ -101,6 +101,13 @@ async function send(client: Client, sizes: number[], target: string | null = nul
 
 const list = (client: Client) => client.json<Drop[]>("GET", "/api/drops");
 
+// Reads the whole body so the stored object is not left half-streamed.
+async function download(client: Client, id: string): Promise<number> {
+  const response = await client.request("GET", `/api/drops/${id}/items/0`);
+  await response.arrayBuffer();
+  return response.status;
+}
+
 describe("sending and receiving", () => {
   it("delivers an encrypted drop and burns it on receipt", async () => {
     const { first, second, master } = await account();
@@ -155,7 +162,7 @@ describe("sending and receiving", () => {
 
     expect((await second.request("POST", `/api/drops/${id}/received`)).status).toBe(204);
     expect(await list(first)).toEqual([]);
-    expect((await second.request("GET", `/api/drops/${id}/items/0`)).status).toBe(404);
+    expect(await download(second, id)).toBe(404);
     const objects = await env.DROPS.list({ prefix: `drops/${id}/` });
     expect(objects.objects).toEqual([]);
   });
@@ -178,7 +185,7 @@ describe("sending and receiving", () => {
       (await first.request("POST", `/api/drops/${id}/complete`, { manifest: "AQ" })).status,
     ).toBe(409);
     expect(await list(second)).toEqual([]);
-    expect((await second.request("GET", `/api/drops/${id}/items/0`)).status).toBe(404);
+    expect(await download(second, id)).toBe(404);
     expect((await second.request("POST", `/api/drops/${id}/received`)).status).toBe(404);
     await first.upload(
       `/api/drops/${id}/items/1/parts/0`,
@@ -207,9 +214,9 @@ describe("addressing", () => {
   it("offers an untargeted drop to every device but the sender", async () => {
     const { first, second } = await account();
     const id = await send(first, [5]);
-    expect((await first.request("GET", `/api/drops/${id}/items/0`)).status).toBe(404);
+    expect(await download(first, id)).toBe(404);
     expect((await first.request("POST", `/api/drops/${id}/received`)).status).toBe(404);
-    expect((await second.request("GET", `/api/drops/${id}/items/0`)).status).toBe(200);
+    expect(await download(second, id)).toBe(200);
   });
 
   it("offers a targeted drop only to its target", async () => {
@@ -219,8 +226,8 @@ describe("addressing", () => {
     const id = await send(first, [5], secondId);
     const [drop] = await list(third);
     expect(drop?.target).toEqual({ id: secondId, name: "second" });
-    expect((await third.request("GET", `/api/drops/${id}/items/0`)).status).toBe(404);
-    expect((await second.request("GET", `/api/drops/${id}/items/0`)).status).toBe(200);
+    expect(await download(third, id)).toBe(404);
+    expect(await download(second, id)).toBe(200);
   });
 
   it("rejects targeting the sender or an unknown device", async () => {
@@ -235,8 +242,8 @@ describe("addressing", () => {
     const { client: browser } = await signIn(authenticator);
     expect((await create(browser, [1])).status).toBe(403);
     expect((await browser.request("GET", "/api/drops")).status).toBe(403);
-    expect((await browser.request("GET", `/api/drops/${id}/items/0`)).status).toBe(404);
-    expect((await second.request("GET", `/api/drops/${id}/items/0`)).status).toBe(200);
+    expect(await download(browser, id)).toBe(404);
+    expect(await download(second, id)).toBe(200);
   });
 });
 
@@ -396,7 +403,9 @@ describe("notifications", () => {
     assert(socket !== null);
     socket.accept();
     const messages: string[] = [];
-    socket.addEventListener("message", (event) => messages.push(String(event.data)));
+    socket.addEventListener("message", (event) => {
+      messages.push(String(event.data));
+    });
     const id = await send(first, [5]);
     await second.request("POST", `/api/drops/${id}/received`);
     await expect.poll(() => messages).toEqual(["drops", "drops"]);
