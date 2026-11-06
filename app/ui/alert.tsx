@@ -1,10 +1,8 @@
-import { ArrowClockwiseIcon } from "@phosphor-icons/react/dist/csr/ArrowClockwise";
 import { WarningCircleIcon } from "@phosphor-icons/react/dist/csr/WarningCircle";
 
 const TONES = {
   danger: { className: "gd-alert", Icon: WarningCircleIcon },
   warning: { className: "gd-alert gd-alert--warning", Icon: WarningCircleIcon },
-  update: { className: "gd-alert gd-alert--signal", Icon: ArrowClockwiseIcon },
 };
 
 export function Alert({

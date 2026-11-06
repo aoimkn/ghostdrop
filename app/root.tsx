@@ -12,6 +12,7 @@ import {
 import { getLocale } from "./paraglide/runtime";
 import { paraglideMiddleware } from "./paraglide/server";
 import { ErrorScreen } from "./ui/error-screen";
+import { registerServiceWorker, useUpdateOnNavigation } from "./ui/update";
 import "./app.css";
 import { useEffect } from "react";
 
@@ -48,11 +49,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  useEffect(() => {
-    if (import.meta.env.PROD && "serviceWorker" in navigator) {
-      void navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" });
-    }
-  }, []);
+  useEffect(registerServiceWorker, []);
+  useUpdateOnNavigation();
   return <Outlet />;
 }
 

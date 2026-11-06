@@ -27,7 +27,7 @@ import { BackHeader, Column } from "~/app/ui/page";
 import { TransferProgress } from "~/app/ui/progress";
 import { useNow } from "~/app/ui/use-now";
 import { useOnline } from "~/app/ui/use-online";
-import { useUpdateReady } from "~/app/ui/use-update-ready";
+import { useUpdateWhenIdle } from "~/app/ui/update";
 
 import type { Route } from "./+types/home";
 
@@ -64,11 +64,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const { entries, connected, refresh } = useDrops();
   const online = useOnline();
   const offline = !online || !connected;
-  const updateReady = useUpdateReady();
   const [receiving, setReceiving] = useState<Receiving | null>(null);
   const [received, setReceived] = useState<Received | null>(null);
   const toUnlock = () => void navigate("/unlock");
   const compose = useCompose({ onSent: () => void refresh(), onLocked: toUnlock });
+  useUpdateWhenIdle(!compose.open && receiving === null && received === null);
 
   useEffect(() => {
     const onPaste = (event: ClipboardEvent) => {
@@ -164,20 +164,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       <main className="min-h-dvh px-[max(16px,3vw)] py-6">
         <div className="mx-auto flex max-w-[1120px] flex-col gap-6">
           {header}
-          {updateReady && (
-            <div className="flex flex-col gap-2">
-              <Alert tone="update" quiet>
-                {m.common_update_available()}
-              </Alert>
-              <button
-                type="button"
-                className="gd-button gd-button--secondary label min-h-11 self-end px-6"
-                onClick={() => window.location.reload()}
-              >
-                {m.common_reload()}
-              </button>
-            </div>
-          )}
           {offline && (
             <Alert tone="warning" quiet>
               {m.common_offline()}
@@ -296,20 +282,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   return (
     <Column>
       {header}
-      {updateReady && (
-        <div className="flex flex-col gap-2">
-          <Alert tone="update" quiet>
-            {m.common_update_available()}
-          </Alert>
-          <button
-            type="button"
-            className="gd-button gd-button--secondary label min-h-11"
-            onClick={() => window.location.reload()}
-          >
-            {m.common_reload()}
-          </button>
-        </div>
-      )}
       {offline && (
         <Alert tone="warning" quiet>
           {m.common_offline()}

@@ -327,9 +327,3 @@
 .gd-alert--warning .gd-alert__icon {
   color: var(--warning);
 }
-.gd-alert--signal {
-  border-color: var(--signal);
-}
-.gd-alert--signal .gd-alert__icon {
-  color: var(--signal);
-}
