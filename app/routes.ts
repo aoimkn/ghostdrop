@@ -8,6 +8,8 @@ export default [
   route("unlock", "routes/unlock.tsx"),
   route("settings", "routes/settings.tsx"),
   route("settings/passphrase", "routes/replace-passphrase.tsx"),
+  route("offline", "routes/offline.tsx"),
+  route("sw.js", "routes/service-worker.ts"),
   ...prefix("api", [
     layout("routes/api/layout.ts", [
       route("sign-up/options", "routes/api/auth/sign-up-options.ts"),

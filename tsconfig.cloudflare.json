@@ -9,6 +9,7 @@
     "test/worker/**/*",
     "worker-configuration.d.ts"
   ],
+  "exclude": ["app/service-worker.js"],
   "compilerOptions": {
     "composite": true,
     "strict": true,

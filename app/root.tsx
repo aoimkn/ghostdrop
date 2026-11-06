@@ -1,6 +1,5 @@
 import {
   isRouteErrorResponse,
-  Link,
   type LinksFunction,
   Links,
   Meta,
@@ -10,12 +9,11 @@ import {
   type MiddlewareFunction,
 } from "react-router";
 
-import { m } from "./paraglide/messages";
 import { getLocale } from "./paraglide/runtime";
 import { paraglideMiddleware } from "./paraglide/server";
-import { Logo } from "./ui/logo";
-import { Column } from "./ui/page";
+import { ErrorScreen } from "./ui/error-screen";
 import "./app.css";
+import { useEffect } from "react";
 
 import type { Route } from "./+types/root";
 
@@ -25,6 +23,8 @@ export const middleware: MiddlewareFunction<Response>[] = [
 
 export const links: LinksFunction = () => [
   { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+  { rel: "apple-touch-icon", href: "/icons/apple-touch-icon.png" },
+  { rel: "manifest", href: "/manifest.webmanifest" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -33,6 +33,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1a1b26" />
+        <meta name="theme-color" media="(prefers-color-scheme: light)" content="#eef0f7" />
         <Meta />
         <Links />
       </head>
@@ -46,27 +48,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  useEffect(() => {
+    if (import.meta.env.PROD && "serviceWorker" in navigator) {
+      void navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" });
+    }
+  }, []);
   return <Outlet />;
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  const notFound = isRouteErrorResponse(error) && error.status === 404;
-  return (
-    <Column spread>
-      <div className="flex flex-col gap-6 pt-30">
-        <Logo className="display text-[40px]" />
-        <div className="flex flex-col gap-2">
-          <h1 className="title m-0">
-            {notFound ? m.error_not_found_title() : m.error_unknown_title()}
-          </h1>
-          <p className="body m-0 text-ink-muted">
-            {notFound ? m.error_not_found_body() : m.error_unknown_body()}
-          </p>
-        </div>
-      </div>
-      <Link to="/" reloadDocument className="gd-button gd-button--primary label min-h-12">
-        {m.common_go_home()}
-      </Link>
-    </Column>
-  );
+  return <ErrorScreen notFound={isRouteErrorResponse(error) && error.status === 404} />;
 }

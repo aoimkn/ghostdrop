@@ -17,6 +17,8 @@ export default defineConfig({
     babel({ presets: [reactCompilerPreset()] }),
   ],
   resolve: { tsconfigPaths: true },
+  // Each build gets its own id so browsers see a changed service worker and replace it.
+  define: { "import.meta.env.BUILD_ID": JSON.stringify(Date.now().toString(36)) },
   // Rolldown does not keep module execution order across chunks by default, which runs
   // tsyringe's polyfill check (via @simplewebauthn/server) before reflect-metadata loads.
   environments: { ssr: { build: { rolldownOptions: { output: { strictExecutionOrder: true } } } } },
