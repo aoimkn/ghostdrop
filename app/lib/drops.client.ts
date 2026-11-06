@@ -1,0 +1,163 @@
+import { base64URLStringToBuffer, bufferToBase64URLString } from "@simplewebauthn/browser";
+import { z } from "zod";
+
+import { call, request } from "./api.client";
+import { type ItemMeta, openItem, openManifest, sealManifest, sealPart } from "./drop-crypto";
+import { MAX_DROP_BYTES, MAX_ITEMS, paddedSize, partCount } from "./drop-format";
+import { loadKey } from "./keystore.client";
+
+const UPLOAD_CONCURRENCY = 3;
+
+const deviceRef = z.object({ id: z.string(), name: z.string().nullable() });
+
+const drop = z.object({
+  id: z.string(),
+  sender: deviceRef,
+  target: deviceRef.nullable(),
+  items: z.array(z.object({ size: z.number() })),
+  manifest: z.string(),
+  createdAt: z.number(),
+  expiresAt: z.number(),
+});
+
+export type Drop = z.infer<typeof drop>;
+
+export type OutgoingItem = { type: string; name: string | null; content: Blob };
+
+export type ReceivedItem = { type: string; name: string | null; content: Blob };
+
+export class LockedError extends Error {}
+
+export class DropTooLargeError extends Error {}
+
+export class TooManyItemsError extends Error {}
+
+export class MismatchedDropError extends Error {}
+
+export async function sendDrop(items: OutgoingItem[], target: string | null): Promise<void> {
+  const master = await requireKey();
+  const total = items.reduce((sum, { content }) => sum + content.size, 0);
+  if (total > MAX_DROP_BYTES) throw new DropTooLargeError();
+  if (items.length > MAX_ITEMS) throw new TooManyItemsError();
+  const { id } = z
+    .object({ id: z.string() })
+    .parse(
+      await call("POST", "/api/drops", {
+        target,
+        items: items.map(({ content }) => ({ size: paddedSize(content.size) })),
+      }),
+    );
+  const dropId = decode(id);
+  try {
+    const jobs = items.flatMap(({ content }, index) =>
+      Array.from({ length: partCount(paddedSize(content.size)) }, (_, part) => async () => {
+        const sealed = await sealPart(master, dropId, index, content, part);
+        await request("PUT", `/api/drops/${id}/items/${index}/parts/${part}`, { body: sealed });
+      }),
+    );
+    await runConcurrently(jobs, UPLOAD_CONCURRENCY);
+    const meta: ItemMeta[] = items.map(({ type, name, content }) => ({
+      type,
+      name,
+      size: content.size,
+    }));
+    await call("POST", `/api/drops/${id}/complete`, {
+      manifest: encode(await sealManifest(master, dropId, meta)),
+    });
+  } catch (error) {
+    await call("DELETE", `/api/drops/${id}`).catch(() => undefined);
+    throw error;
+  }
+}
+
+export async function listDrops(): Promise<Drop[]> {
+  return z.array(drop).parse(await call("GET", "/api/drops"));
+}
+
+export function isReceivable(candidate: Drop, deviceId: string): boolean {
+  return candidate.target === null
+    ? candidate.sender.id !== deviceId
+    : candidate.target.id === deviceId;
+}
+
+export async function receiveDrop(candidate: Drop): Promise<ReceivedItem[]> {
+  const master = await requireKey();
+  const dropId = decode(candidate.id);
+  const meta = await openManifest(master, dropId, decode(candidate.manifest));
+  if (
+    meta.length !== candidate.items.length ||
+    meta.some((item, index) => paddedSize(item.size) !== candidate.items[index]?.size)
+  ) {
+    throw new MismatchedDropError();
+  }
+  const received: ReceivedItem[] = [];
+  for (const [index, item] of meta.entries()) {
+    const response = await request("GET", `/api/drops/${candidate.id}/items/${index}`);
+    if (!response.body) throw new MismatchedDropError();
+    const plain = await openItem(master, dropId, index, item.size, response.body);
+    received.push({
+      type: item.type,
+      name: item.name,
+      content: new Blob(plain, { type: item.type }),
+    });
+  }
+  await call("POST", `/api/drops/${candidate.id}/received`);
+  return received;
+}
+
+export async function deleteDrop(id: string): Promise<void> {
+  await call("DELETE", `/api/drops/${encodeURIComponent(id)}`);
+}
+
+export function watchDrops(onChange: () => void): () => void {
+  let socket: WebSocket | null = null;
+  let retry: ReturnType<typeof setTimeout> | undefined;
+  let delay = 1000;
+  let stopped = false;
+  const connect = () => {
+    const url = new URL("/api/events", window.location.href);
+    url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+    socket = new WebSocket(url);
+    socket.addEventListener("open", () => {
+      delay = 1000;
+      onChange();
+    });
+    socket.addEventListener("message", () => onChange());
+    socket.addEventListener("close", () => {
+      if (stopped) return;
+      retry = setTimeout(connect, delay);
+      delay = Math.min(delay * 2, 30_000);
+    });
+  };
+  connect();
+  return () => {
+    stopped = true;
+    clearTimeout(retry);
+    socket?.close();
+  };
+}
+
+async function requireKey(): Promise<CryptoKey> {
+  const key = await loadKey();
+  if (!key) throw new LockedError();
+  return key;
+}
+
+async function runConcurrently(jobs: (() => Promise<void>)[], limit: number): Promise<void> {
+  let next = 0;
+  const worker = async () => {
+    while (next < jobs.length) {
+      const job = jobs[next++];
+      if (job) await job();
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, jobs.length) }, worker));
+}
+
+function decode(value: string): Uint8Array<ArrayBuffer> {
+  return new Uint8Array(base64URLStringToBuffer(value));
+}
+
+function encode(bytes: Uint8Array<ArrayBuffer>): string {
+  return bufferToBase64URLString(bytes.slice().buffer);
+}

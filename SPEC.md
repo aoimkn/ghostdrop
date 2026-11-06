@@ -76,6 +76,7 @@ Rationale: the WebAuthn PRF extension could derive the key from the passkey itse
 - A device is added to the account when the owner signs in and enters the passphrase and a name on it.
 - Device names are unique within the account and are shown when choosing a target and on pending drops. The owner can rename a device and remove it from the account. Removing a device signs it out immediately.
 - A device is removed when it signs out or its session expires. Signing in again in the same browser adds it as a new device.
+- Drops targeted at a device are burned when the device is removed.
 
 ### Account deletion
 
@@ -85,13 +86,13 @@ The owner can delete their account. Its passkeys, devices and pending drops are 
 
 ### Sending
 
-- The owner creates a drop from one or more items on any device. The items' contents together may not exceed the maximum drop size.
+- The owner creates a drop from one or more items on any device. The items' contents together may not exceed the maximum drop size, and a drop may hold at most the maximum number of items.
 - Optionally, the owner picks a target device. Without a target, any other device of the account can receive the drop.
-- A drop becomes visible to other devices only once it is completely uploaded.
+- A drop becomes visible to other devices only once it is completely uploaded. An upload that makes no progress for the upload timeout is abandoned.
 
 ### Pending drops
 
-- An account can hold multiple pending drops, up to a limit.
+- An account can hold multiple pending drops, up to a limit. Drops still being uploaded count toward it.
 - A drop sent while the account is at the limit is rejected. Existing drops are never removed to make room, since a burn cannot be undone.
 - Every eligible device sees the pending drops addressed to it: those targeted at it, and untargeted ones it did not send.
 - Online devices are notified when a new drop arrives.
@@ -144,6 +145,8 @@ Rationale: these three are the only types the Clipboard API requires browsers to
 | Expiry period                     | 24 hours                      |
 | Maximum drop size                 | 100 MiB                       |
 | Maximum pending drops per account | 10                            |
+| Maximum items per drop            | 1,000                         |
+| Upload timeout                    | 1 hour                        |
 | Minimum passphrase length         | 15 characters                 |
 | Maximum device name length        | TBD                           |
 | Session lifetime                  | 30 days, extended on each use |

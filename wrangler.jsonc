@@ -17,6 +17,7 @@
     ],
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Account", "Challenge"] }],
+  "r2_buckets": [{ "binding": "DROPS", "bucket_name": "ghostdrop-drops" }],
   /**
    * Smart Placement
    * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

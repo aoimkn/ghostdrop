@@ -1,6 +1,8 @@
 import { DurableObject } from "cloudflare:workers";
 import { z } from "zod";
 
+import { Drops, type DropSummary, type Sender } from "./drops";
+
 export type NewPasskey = {
   id: string;
   publicKey: Uint8Array;
@@ -30,8 +32,11 @@ type PasskeyRow = {
 };
 
 export class Account extends DurableObject<Env> {
+  private readonly drops: Drops;
+
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
+    this.drops = new Drops(ctx, env.DROPS);
     this.migrate();
   }
 
@@ -64,6 +69,7 @@ export class Account extends DurableObject<Env> {
         created_at INTEGER NOT NULL
       );
     `);
+    this.drops.migrate();
   }
 
   exists(): boolean {
@@ -84,6 +90,8 @@ export class Account extends DurableObject<Env> {
   }
 
   async delete(): Promise<void> {
+    await this.drops.burnAll();
+    this.closeSockets();
     await this.ctx.storage.deleteAll();
     this.migrate();
   }
@@ -140,13 +148,14 @@ export class Account extends DurableObject<Env> {
     );
   }
 
-  createSession(tokenHash: string, expiresAt: number): void {
+  async createSession(tokenHash: string, expiresAt: number): Promise<void> {
     this.purgeExpiredSessions();
     this.ctx.storage.sql.exec(
       "INSERT INTO sessions (token_hash, expires_at) VALUES (?, ?)",
       tokenHash,
       expiresAt,
     );
+    await this.settle();
   }
 
   extendSession(tokenHash: string, expiresAt: number): boolean {
@@ -159,9 +168,9 @@ export class Account extends DurableObject<Env> {
     return updated > 0;
   }
 
-  deleteSession(tokenHash: string): void {
-    this.ctx.storage.sql.exec("DELETE FROM devices WHERE token_hash = ?", tokenHash);
-    this.ctx.storage.sql.exec("DELETE FROM sessions WHERE token_hash = ?", tokenHash);
+  async deleteSession(tokenHash: string): Promise<void> {
+    this.removeSession(tokenHash);
+    await this.settle();
   }
 
   passphraseParams(): Uint8Array | null {
@@ -171,7 +180,7 @@ export class Account extends DurableObject<Env> {
     return row ? new Uint8Array(row.params) : null;
   }
 
-  replacePassphrase(passphrase: Passphrase, tokenHash: string): void {
+  async replacePassphrase(passphrase: Passphrase, tokenHash: string): Promise<void> {
     this.ctx.storage.transactionSync(() => {
       this.ctx.storage.sql.exec(
         "UPDATE passphrase SET params = ?, verifier = ?, epoch = epoch + 1",
@@ -183,15 +192,25 @@ export class Account extends DurableObject<Env> {
         tokenHash,
       );
     });
+    if (await this.drops.burnAll()) this.notify();
   }
 
-  addDevice(
+  async addDevice(
     tokenHash: string,
     device: { id: string; name: string },
     verifier: Uint8Array,
-  ): "added" | "wrong-passphrase" | "already-added" | "name-taken" {
+  ): Promise<"added" | "wrong-passphrase" | "already-added" | "name-taken"> {
     if (!this.verifierMatches(verifier)) return "wrong-passphrase";
     this.purgeExpiredSessions();
+    const result = this.insertDevice(tokenHash, device);
+    await this.settle();
+    return result;
+  }
+
+  private insertDevice(
+    tokenHash: string,
+    device: { id: string; name: string },
+  ): "added" | "already-added" | "name-taken" {
     if (this.deviceRow(tokenHash)) return "already-added";
     if (this.nameTaken(device.name)) return "name-taken";
     this.ctx.storage.sql.exec(
@@ -222,16 +241,24 @@ export class Account extends DurableObject<Env> {
     return row ? this.toDevice(row) : null;
   }
 
-  listDevices(): Device[] {
+  async listDevices(): Promise<Device[]> {
     this.purgeExpiredSessions();
-    return this.ctx.storage.sql
+    const devices = this.ctx.storage.sql
       .exec<DeviceRow>("SELECT id, name, epoch, created_at FROM devices ORDER BY created_at")
       .toArray()
       .map((row) => this.toDevice(row));
+    await this.settle();
+    return devices;
   }
 
-  renameDevice(id: string, name: string): "renamed" | "not-found" | "name-taken" {
+  async renameDevice(id: string, name: string): Promise<"renamed" | "not-found" | "name-taken"> {
     this.purgeExpiredSessions();
+    const result = this.updateDeviceName(id, name);
+    await this.settle();
+    return result;
+  }
+
+  private updateDeviceName(id: string, name: string): "renamed" | "not-found" | "name-taken" {
     const current = this.ctx.storage.sql
       .exec<{ name: string }>("SELECT name FROM devices WHERE id = ?", id)
       .toArray()[0];
@@ -241,22 +268,151 @@ export class Account extends DurableObject<Env> {
     return "renamed";
   }
 
-  removeDevice(id: string): { tokenHash: string } | null {
+  async removeDevice(id: string): Promise<{ tokenHash: string } | null> {
     const row = this.ctx.storage.sql
       .exec<{ token_hash: string }>("SELECT token_hash FROM devices WHERE id = ?", id)
       .toArray()[0];
     if (!row) return null;
-    this.deleteSession(row.token_hash);
+    await this.deleteSession(row.token_hash);
     return { tokenHash: row.token_hash };
   }
 
-  private purgeExpiredSessions(): void {
-    const now = Date.now();
-    this.ctx.storage.sql.exec(
-      "DELETE FROM devices WHERE token_hash IN (SELECT token_hash FROM sessions WHERE expires_at <= ?)",
-      now,
+  async createDrop(
+    tokenHash: string,
+    targetId: string | null,
+    sizes: number[],
+  ): Promise<
+    | { id: string }
+    | "no-device"
+    | "locked"
+    | "bad-target"
+    | "invalid-size"
+    | "too-many-items"
+    | "too-large"
+    | "limit-reached"
+  > {
+    const sender = this.unlockedSender(tokenHash);
+    if (typeof sender === "string") return sender;
+    if (targetId !== null && (targetId === sender.deviceId || !this.deviceExists(targetId))) {
+      return "bad-target";
+    }
+    return this.drops.create(sender, targetId, sizes);
+  }
+
+  dropUploadTarget(tokenHash: string, dropId: string, index: number, part: number) {
+    const sender = this.unlockedSender(tokenHash);
+    if (typeof sender === "string") return null;
+    return this.drops.uploadTarget(sender, dropId, index, part);
+  }
+
+  async recordDropPart(dropId: string, index: number, part: number, etag: string): Promise<void> {
+    await this.drops.recordPart(dropId, index, part, etag);
+  }
+
+  async completeDrop(
+    tokenHash: string,
+    dropId: string,
+    manifest: Uint8Array,
+  ): Promise<"completed" | "not-found" | "incomplete"> {
+    const sender = this.unlockedSender(tokenHash);
+    if (typeof sender === "string") return "not-found";
+    const result = await this.drops.complete(sender, dropId, manifest);
+    if (result === "completed") this.notify();
+    return result;
+  }
+
+  async listDrops(tokenHash: string): Promise<DropSummary[] | null> {
+    this.purgeExpiredSessions();
+    await this.settle();
+    if (!this.deviceRow(tokenHash)) return null;
+    const names = new Map(
+      this.ctx.storage.sql
+        .exec<{ id: string; name: string }>("SELECT id, name FROM devices")
+        .toArray()
+        .map(({ id, name }) => [id, name]),
     );
-    this.ctx.storage.sql.exec("DELETE FROM sessions WHERE expires_at <= ?", now);
+    return this.drops.list(names);
+  }
+
+  dropItemKey(tokenHash: string, dropId: string, index: number): string | null {
+    const receiver = this.unlockedSender(tokenHash);
+    if (typeof receiver === "string") return null;
+    return this.drops.itemKey(receiver, dropId, index);
+  }
+
+  async receiveDrop(tokenHash: string, dropId: string): Promise<boolean> {
+    const receiver = this.unlockedSender(tokenHash);
+    if (typeof receiver === "string" || !this.drops.receivable(receiver, dropId)) return false;
+    if (await this.drops.burn(dropId)) this.notify();
+    return true;
+  }
+
+  async deleteDrop(tokenHash: string, dropId: string): Promise<boolean> {
+    if (!this.deviceRow(tokenHash) || !this.drops.exists(dropId)) return false;
+    if (await this.drops.burn(dropId)) this.notify();
+    return true;
+  }
+
+  override async alarm(): Promise<void> {
+    if (await this.drops.burnExpired()) this.notify();
+  }
+
+  override fetch(request: Request): Response {
+    const deviceId = request.headers.get("X-Device-Id");
+    if (request.headers.get("Upgrade") !== "websocket" || deviceId === null) {
+      return new Response(null, { status: 400 });
+    }
+    const [client, server] = Object.values(new WebSocketPair());
+    if (!client || !server) throw new Error("failed to create a WebSocket pair");
+    this.ctx.acceptWebSocket(server, [deviceId]);
+    return new Response(null, { status: 101, webSocket: client });
+  }
+
+  deviceIdFor(tokenHash: string): string | null {
+    return this.deviceRow(tokenHash)?.id ?? null;
+  }
+
+  private notify(): void {
+    for (const socket of this.ctx.getWebSockets()) socket.send("drops");
+  }
+
+  private closeSockets(deviceId?: string): void {
+    for (const socket of this.ctx.getWebSockets(deviceId)) socket.close(1000, "signed out");
+  }
+
+  private unlockedSender(tokenHash: string): Sender | "no-device" | "locked" {
+    const row = this.deviceRow(tokenHash);
+    if (!row) return "no-device";
+    if (this.toDevice(row).locked) return "locked";
+    return { deviceId: row.id };
+  }
+
+  private deviceExists(id: string): boolean {
+    return this.ctx.storage.sql.exec("SELECT 1 FROM devices WHERE id = ?", id).toArray().length > 0;
+  }
+
+  private purgeExpiredSessions(): void {
+    const expired = this.ctx.storage.sql
+      .exec<{ token_hash: string }>(
+        "SELECT token_hash FROM sessions WHERE expires_at <= ?",
+        Date.now(),
+      )
+      .toArray();
+    for (const { token_hash } of expired) this.removeSession(token_hash);
+  }
+
+  private removeSession(tokenHash: string): void {
+    const device = this.deviceRow(tokenHash);
+    if (device) {
+      this.drops.discardTargetedAt(device.id);
+      this.closeSockets(device.id);
+    }
+    this.ctx.storage.sql.exec("DELETE FROM devices WHERE token_hash = ?", tokenHash);
+    this.ctx.storage.sql.exec("DELETE FROM sessions WHERE token_hash = ?", tokenHash);
+  }
+
+  private async settle(): Promise<void> {
+    if (await this.drops.flush()) this.notify();
   }
 
   private deviceRow(tokenHash: string): DeviceRow | undefined {

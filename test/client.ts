@@ -31,6 +31,18 @@ export class Client {
     return response;
   }
 
+  async upload(path: string, body: Uint8Array<ArrayBuffer>) {
+    return exports.default.fetch(`${ORIGIN}${path}`, {
+      method: "PUT",
+      headers: {
+        Origin: ORIGIN,
+        "Content-Length": String(body.length),
+        ...(this.cookie === null ? {} : { Cookie: this.cookie }),
+      },
+      body,
+    });
+  }
+
   async json<T>(method: string, path: string, body?: unknown): Promise<T> {
     const response = await this.request(method, path, body);
     if (!response.ok)

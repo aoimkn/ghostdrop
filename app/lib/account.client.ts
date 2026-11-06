@@ -10,6 +10,7 @@ import type {
 } from "@simplewebauthn/browser";
 import { z } from "zod";
 
+import { ApiError, call } from "./api.client";
 import { clearKey, loadKey, saveKey } from "./keystore.client";
 import { deriveKey, isLongEnough, newParams, proof } from "./passphrase";
 
@@ -46,22 +47,11 @@ const passkey = z.object({
   lastUsedAt: z.number().nullable(),
 });
 
-const apiError = z.object({ error: z.string() });
-
 export type Passkey = z.infer<typeof passkey>;
 
 export type Device = z.infer<typeof device>;
 
 export type Session = z.infer<typeof session> & { unlocked: boolean };
-
-export class ApiError extends Error {
-  constructor(
-    readonly status: number,
-    readonly code: string,
-  ) {
-    super(`${status} ${code}`);
-  }
-}
 
 export class PassphraseTooShortError extends Error {}
 
@@ -168,17 +158,4 @@ async function existingPassphrase(passphrase: string): Promise<CryptoKey> {
 
 function encode(bytes: Uint8Array<ArrayBuffer>): string {
   return bufferToBase64URLString(bytes.slice().buffer);
-}
-
-async function call(method: string, path: string, body?: unknown): Promise<unknown> {
-  const response = await fetch(path, {
-    method,
-    headers: body === undefined ? {} : { "Content-Type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-  if (!response.ok) {
-    const parsed = apiError.safeParse(await response.json().catch(() => null));
-    throw new ApiError(response.status, parsed.success ? parsed.data.error : "unknown");
-  }
-  return response.status === 204 ? undefined : response.json();
 }
