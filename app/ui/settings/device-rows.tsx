@@ -28,7 +28,7 @@ export function DeviceRows({
           {m.device_added_at({ date: formatDate(locale, device.createdAt) })}
         </div>
       </div>
-      <div className="flex gap-2">
+      <div className="flex w-full gap-2 md:w-auto">
         <button
           type="button"
           className="gd-button gd-button--subtle label min-h-11"
