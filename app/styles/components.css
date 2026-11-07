@@ -44,7 +44,6 @@
   background: var(--surface-sunken);
   color: var(--ink);
   min-height: 32px;
-  padding: 0 var(--space-2);
 }
 .gd-button--destructive {
   color: var(--danger);

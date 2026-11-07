@@ -19,7 +19,7 @@ export function Column({ spread = false, children }: { spread?: boolean; childre
 type Back = { to: string; onBack?: never } | { onBack: () => void; to?: never };
 
 export function BackHeader({ children, ...back }: Back & { children: ReactNode }) {
-  const className = "gd-button gd-button--subtle label min-h-11 min-w-11";
+  const className = "gd-button gd-button--subtle label min-h-11 min-w-11 p-0";
   const icon = <CaretLeftIcon size={24} aria-hidden />;
   return (
     <header className="flex min-h-11 items-center gap-2">

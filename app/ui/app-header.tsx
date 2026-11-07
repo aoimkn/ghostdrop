@@ -15,7 +15,7 @@ export function AppHeader({ deviceName }: { deviceName: string }) {
         </span>
         <Link
           to="/settings"
-          className="gd-button gd-button--subtle label min-h-11 min-w-11"
+          className="gd-button gd-button--subtle label min-h-11 min-w-11 p-0"
           aria-label={m.account_settings()}
         >
           <GearSixIcon size={24} aria-hidden />
