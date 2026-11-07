@@ -4,7 +4,7 @@ import type {
   RegistrationResponseJSON,
 } from "@simplewebauthn/server";
 import { isoBase64URL } from "@simplewebauthn/server/helpers";
-import { expect } from "vitest";
+import { expect, onTestFinished, vi } from "vitest";
 
 import { SoftwareAuthenticator } from "./authenticator";
 import { Client, ORIGIN } from "./client";
@@ -73,4 +73,22 @@ export function signUpBody(
 
 function randomBase64URL(length: number): string {
   return isoBase64URL.fromBuffer(crypto.getRandomValues(new Uint8Array(length)));
+}
+
+// Counting is the platform's job, and the local emulation counts in wall-clock windows the test
+// cannot control. Tests stub the limiter and check what the app asks of it and how it answers.
+export function stubLimiter(limiter: RateLimit) {
+  let success = true;
+  const keys: string[] = [];
+  const spy = vi.spyOn(limiter, "limit").mockImplementation(async ({ key }) => {
+    keys.push(key);
+    return { success };
+  });
+  onTestFinished(() => spy.mockRestore());
+  return {
+    keys,
+    refuse: () => {
+      success = false;
+    },
+  };
 }

@@ -17,7 +17,7 @@ import { deriveKey, newParams, proof } from "~/app/lib/passphrase";
 
 import { SoftwareAuthenticator } from "./authenticator";
 import { Client, ORIGIN } from "./client";
-import { signIn, signUpBody } from "./helpers";
+import { signIn, signUpBody, stubLimiter } from "./helpers";
 
 type Drop = {
   id: string;
@@ -256,14 +256,18 @@ describe("limits", () => {
     expect((await create(first, [MAX_DROP_BYTES])).status).toBe(201);
   });
 
-  it("limits how many drops an account starts per minute", async () => {
-    const { first } = await account();
-    for (let i = 0; i < 30; i++) {
-      const response = await create(first, [1]);
-      expect(response.status).toBe(201);
-      const { id } = await response.json<{ id: string }>();
-      expect((await first.request("DELETE", `/api/drops/${id}`)).status).toBe(204);
-    }
+  it("counts new drops per account and refuses them when the limiter does", async () => {
+    const limiter = stubLimiter(env.DROP_LIMITER);
+    const { first, second } = await account();
+    const other = await account();
+    expect((await create(first, [1])).status).toBe(201);
+    expect((await create(second, [1])).status).toBe(201);
+    expect((await create(other.first, [1])).status).toBe(201);
+    const [firstKey, secondKey, otherKey] = limiter.keys;
+    expect(secondKey).toBe(firstKey);
+    expect(otherKey).not.toBe(firstKey);
+
+    limiter.refuse();
     const response = await create(first, [1]);
     expect(response.status).toBe(429);
     expect(await response.json()).toEqual({ error: "rate-limited" });

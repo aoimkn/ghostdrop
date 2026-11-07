@@ -3,7 +3,7 @@ import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 
 import { Client } from "./client";
-import { newPassphrase, signIn, signUp } from "./helpers";
+import { newPassphrase, signIn, signUp, stubLimiter } from "./helpers";
 
 async function attempt(client: Client, path: string) {
   return (await client.request("POST", path)).status;
@@ -11,22 +11,35 @@ async function attempt(client: Client, path: string) {
 
 describe("sign-up and sign-in attempts", () => {
   it("are limited per network", async () => {
+    const limiter = stubLimiter(env.AUTH_LIMITER);
     const client = new Client("203.0.113.7");
-    for (let i = 0; i < 5; i++) {
-      expect(await attempt(client, "/api/sign-up/options")).toBe(200);
-      expect(await attempt(client, "/api/sign-in/options")).toBe(200);
-    }
-    expect(await attempt(client, "/api/sign-in/options")).toBe(429);
+    expect(await attempt(client, "/api/sign-up/options")).toBe(200);
+    expect(await attempt(client, "/api/sign-in/options")).toBe(200);
     expect(await attempt(new Client("203.0.113.8"), "/api/sign-in/options")).toBe(200);
+    const [signUpKey, signInKey, otherKey] = limiter.keys;
+    expect(signInKey).toBe(signUpKey);
+    expect(otherKey).not.toBe(signUpKey);
+
+    limiter.refuse();
+    const refused = await client.request("POST", "/api/sign-in/options");
+    expect(refused.status).toBe(429);
+    expect(await refused.json()).toEqual({ error: "rate-limited" });
   });
 
   it("count an IPv6 /64 as one network", async () => {
-    const prefix = "2001:db8:85a3:42";
-    for (let i = 0; i < 10; i++) {
-      expect(await attempt(new Client(`${prefix}::${i + 1}`), "/api/sign-in/options")).toBe(200);
+    const limiter = stubLimiter(env.AUTH_LIMITER);
+    for (const address of [
+      "2001:db8:85a3:42::1",
+      "2001:db8:85a3:42:0:0:0:ff",
+      "2001:0DB8:85a3:0042::2",
+      "2001:db8:85a3:43::1",
+    ]) {
+      expect(await attempt(new Client(address), "/api/sign-in/options")).toBe(200);
     }
-    expect(await attempt(new Client(`${prefix}:0:0:0:ff`), "/api/sign-in/options")).toBe(429);
-    expect(await attempt(new Client("2001:db8:85a3:43::1"), "/api/sign-in/options")).toBe(200);
+    const [first, expanded, padded, otherNetwork] = limiter.keys;
+    expect(expanded).toBe(first);
+    expect(padded).toBe(first);
+    expect(otherNetwork).not.toBe(first);
   });
 });
 
