@@ -38,3 +38,18 @@ test("the server sends a browser that is not signed in to sign-in before any pag
     expect(response.headers().location, path).toBe("/sign-in");
   }
 });
+
+test("a device removed from another one leaves home for sign-in", async ({ browser }) => {
+  const phone = await open(browser, PHONE);
+  await signUp(phone.page, "iPhone");
+  const desktop = await open(browser, DESKTOP);
+  await signInAs(desktop.page, desktop.authenticator, phone.authenticator);
+  await addDevice(desktop.page, PASSPHRASE, "MacBook Air");
+  await expect(desktop.page.getByText("[drop_pending_title]")).toBeVisible();
+
+  await phone.page.goto("/settings");
+  await phone.page.getByRole("button", { name: "[device_remove]" }).click();
+  await phone.page.getByRole("button", { name: "[device_remove_confirm]" }).click();
+
+  await expect(desktop.page).toHaveURL(/\/sign-in$/);
+});

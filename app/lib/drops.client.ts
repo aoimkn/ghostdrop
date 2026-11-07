@@ -164,18 +164,27 @@ export async function deleteDrop(id: string): Promise<void> {
   await call("DELETE", `/api/drops/${encodeURIComponent(id)}`);
 }
 
-export function watchDrops(
-  onChange: () => void,
-  onConnection: (connected: boolean) => void,
-): () => void {
+export function watchDrops({
+  onChange,
+  onConnection,
+}: {
+  onChange: () => void;
+  onConnection: (connected: boolean) => void;
+}): () => void {
   let socket: WebSocket | null = null;
   let retry: ReturnType<typeof setTimeout> | undefined;
-  let delay = 1000;
-  let stopped = false;
+  let delay = 0;
+  let connected = true;
   let frozen = false;
+  let stopped = false;
   // Only attempts made while the page is active say whether the server is reachable: a frozen
   // page becomes visible before it resumes, and sockets opened in between fail at once.
-  const active = () => !document.hidden && !frozen;
+  const active = () => !stopped && !document.hidden && !frozen;
+  const report = (next: boolean) => {
+    if (next === connected) return;
+    connected = next;
+    onConnection(next);
+  };
   const connect = () => {
     clearTimeout(retry);
     const url = new URL("/api/events", window.location.href);
@@ -185,28 +194,23 @@ export function watchDrops(
     let opened = false;
     current.addEventListener("open", () => {
       opened = true;
-      delay = 1000;
-      onConnection(true);
+      report(true);
       onChange();
     });
     current.addEventListener("message", () => onChange());
     current.addEventListener("close", () => {
-      if (stopped || socket !== current) return;
+      if (socket !== current) return;
       socket = null;
       if (!active()) return;
       // Suspended apps lose their socket while the network is fine, so only a failed attempt means offline.
-      if (opened) {
-        connect();
-        return;
-      }
-      onConnection(false);
+      if (!opened) report(false);
       retry = setTimeout(connect, delay);
-      delay = Math.min(delay * 2, 30_000);
+      delay = Math.min(Math.max(delay * 2, 1000), 30_000);
     });
   };
   const reconnectNow = () => {
     if (!active() || socket !== null) return;
-    delay = 1000;
+    delay = 0;
     connect();
   };
   const onVisibility = () => {
@@ -225,7 +229,7 @@ export function watchDrops(
   document.addEventListener("freeze", onFreeze);
   document.addEventListener("resume", onResume);
   window.addEventListener("online", reconnectNow);
-  connect();
+  reconnectNow();
   return () => {
     stopped = true;
     clearTimeout(retry);

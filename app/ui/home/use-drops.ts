@@ -49,7 +49,12 @@ export function useDrops(): {
   };
 
   const onChange = useEffectEvent(() => void refresh());
-  useEffect(() => watchDrops(onChange, setConnected), []);
+  const onConnection = useEffectEvent((next: boolean) => {
+    setConnected(next);
+    // A failed connection can also mean this device was signed out, which only a request tells.
+    if (!next) void refresh();
+  });
+  useEffect(() => watchDrops({ onChange, onConnection }), []);
 
   return { entries, connected, refresh };
 }

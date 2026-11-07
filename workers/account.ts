@@ -263,6 +263,11 @@ export class Account extends DurableObject<Env> {
   }
 
   private closeSockets(deviceId?: string): void {
-    for (const socket of this.ctx.getWebSockets(deviceId)) socket.close(1000, "signed out");
+    for (const socket of this.ctx.getWebSockets(deviceId)) {
+      // A hibernated socket that has never received a message may not deliver a close initiated
+      // here, so the client is first told to check its session.
+      socket.send("signed out");
+      socket.close(1000, "signed out");
+    }
   }
 }
