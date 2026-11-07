@@ -241,7 +241,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         ) : (
           receiving && (
             <>
-              {receiving.failed && <Alert tone="danger">{m.drop_receive_failed()}</Alert>}
+              {receiving.failed && <Alert tone="danger">{m.error_receive_failed()}</Alert>}
               <section className="flex flex-col gap-2 rounded-md bg-surface-raised p-4">
                 <TransferProgress
                   label={receiving.failed ? m.drop_receive_failed() : m.drop_receive_in_progress()}

@@ -71,7 +71,7 @@ export function DropRow({
           {m.drop_expires_in({ time: formatTimeLeft(getLocale(), drop.expiresAt - now) })}
         </div>
       </div>
-      {receiving?.failed === true && <Alert tone="danger">{m.drop_receive_failed()}</Alert>}
+      {receiving?.failed === true && <Alert tone="danger">{m.error_receive_failed()}</Alert>}
       {receiving && (
         <TransferProgress
           label={receiving.failed ? m.drop_receive_failed() : m.drop_receive_in_progress()}

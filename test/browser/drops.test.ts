@@ -36,7 +36,8 @@ test("a receive that fails keeps the drop so it can be tried again", async ({ br
 
   await desktop.page.route("**/api/drops/*/items/*", (route) => route.abort());
   await desktop.page.getByRole("button", { name: "[drop_receive]" }).click();
-  await expect(desktop.page.getByText("[drop_receive_failed]")).toHaveCount(2);
+  await expect(desktop.page.getByText("[error_receive_failed]")).toBeVisible();
+  await expect(desktop.page.getByText("[drop_receive_failed]")).toBeVisible();
   await desktop.page.unroute("**/api/drops/*/items/*");
 
   await desktop.page.getByRole("button", { name: "[common_retry]" }).click();

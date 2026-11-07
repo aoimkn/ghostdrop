@@ -244,7 +244,7 @@ export function ComposePanel({ compose, devices, deviceName, wide, header }: Pro
   return (
     <>
       {header}
-      {compose.phase === "failed" && <Alert tone="danger">{m.drop_send_failed()}</Alert>}
+      {compose.phase === "failed" && <Alert tone="danger">{m.error_send_failed()}</Alert>}
       {compose.alert !== null && <Alert tone="warning">{compose.alert}</Alert>}
       {busy ? (
         <Progress compose={compose} deviceName={deviceName} targetName={targetName} inset={wide} />
