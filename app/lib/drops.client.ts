@@ -1,7 +1,7 @@
 import { base64URLStringToBuffer, bufferToBase64URLString } from "@simplewebauthn/browser";
 import { z } from "zod";
 
-import { call, request } from "./api.client";
+import { call, request, upload } from "./api.client";
 import { type ItemMeta, openItem, openManifest, sealManifest, sealPart } from "./drop-crypto";
 import {
   MAX_DROP_BYTES,
@@ -62,18 +62,24 @@ export async function sendDrop(
     (sum, { content }) => sum + sealedSize(paddedSize(content.size)),
     0,
   );
-  let sentBytes = 0;
+  const sentBytes = new Map<string, number>();
+  const report = (key: string, bytes: number) => {
+    sentBytes.set(key, bytes);
+    let sent = 0;
+    for (const value of sentBytes.values()) sent += value;
+    onProgress?.(sent / totalBytes);
+  };
   try {
     const jobs = items.flatMap(({ content }, index) =>
       Array.from({ length: partCount(paddedSize(content.size)) }, (_, part) => async () => {
         signal?.throwIfAborted();
+        const key = `${index}/${part}`;
         const sealed = await sealPart(master, dropId, index, content, part);
-        await request("PUT", `/api/drops/${id}/items/${index}/parts/${part}`, {
-          body: sealed,
+        await upload(`/api/drops/${id}/items/${index}/parts/${part}`, sealed, {
           signal,
+          onProgress: (loaded) => report(key, loaded),
         });
-        sentBytes += partSize(paddedSize(content.size), part);
-        onProgress?.(sentBytes / totalBytes);
+        report(key, partSize(paddedSize(content.size), part));
       }),
     );
     await runConcurrently(jobs, UPLOAD_CONCURRENCY);

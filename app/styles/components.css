@@ -346,6 +346,12 @@ dialog.gd-dialog {
 .gd-progress::-webkit-progress-value {
   background: currentColor;
   border-radius: var(--radius-sm);
+  transition: width 300ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gd-progress::-webkit-progress-value {
+    transition: none;
+  }
 }
 .gd-progress::-moz-progress-bar {
   background: currentColor;

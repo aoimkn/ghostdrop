@@ -26,13 +26,63 @@ export async function call(method: string, path: string, body?: unknown): Promis
 export async function request(method: string, path: string, init: RequestInit = {}) {
   const response = await fetch(path, { ...init, method });
   if (!response.ok) {
-    const parsed = apiError.safeParse(await response.json().catch(() => null));
-    const retryAfter = Number.parseInt(response.headers.get("Retry-After") ?? "", 10);
-    throw new ApiError(
+    throw apiErrorOf(
       response.status,
-      parsed.success ? parsed.data.error : "unknown",
-      Number.isNaN(retryAfter) ? null : retryAfter,
+      await response.json().catch(() => null),
+      response.headers.get("Retry-After"),
     );
   }
   return response;
+}
+
+// fetch cannot report how much of a request body has been sent, XMLHttpRequest can.
+export function upload(
+  path: string,
+  body: XMLHttpRequestBodyInit,
+  { signal, onProgress }: { signal?: AbortSignal; onProgress?: (loaded: number) => void } = {},
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted === true) {
+      reject(signal.reason);
+      return;
+    }
+    const xhr = new XMLHttpRequest();
+    const onAbort = () => xhr.abort();
+    signal?.addEventListener("abort", onAbort, { once: true });
+    xhr.upload.addEventListener("progress", (event) => onProgress?.(event.loaded));
+    xhr.addEventListener("loadend", () => {
+      signal?.removeEventListener("abort", onAbort);
+      if (signal?.aborted === true) {
+        reject(signal.reason);
+      } else if (xhr.status === 0) {
+        reject(new TypeError("upload failed"));
+      } else if (xhr.status < 200 || xhr.status >= 300) {
+        reject(
+          apiErrorOf(xhr.status, parseJson(xhr.responseText), xhr.getResponseHeader("Retry-After")),
+        );
+      } else {
+        resolve();
+      }
+    });
+    xhr.open("PUT", path);
+    xhr.send(body);
+  });
+}
+
+function apiErrorOf(status: number, body: unknown, retryAfterHeader: string | null): ApiError {
+  const parsed = apiError.safeParse(body);
+  const retryAfter = Number.parseInt(retryAfterHeader ?? "", 10);
+  return new ApiError(
+    status,
+    parsed.success ? parsed.data.error : "unknown",
+    Number.isNaN(retryAfter) ? null : retryAfter,
+  );
+}
+
+function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
 }
