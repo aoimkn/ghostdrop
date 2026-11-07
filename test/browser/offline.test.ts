@@ -39,8 +39,11 @@ test("home does not say it is offline when a lost connection comes straight back
     socket.connectToServer();
     sockets.push(socket);
   });
+  // The list loads once the socket opens; closing it any earlier is a failed attempt, which does mean offline.
+  const opened = phone.page.waitForResponse(/\/api\/drops$/);
   await signUp(phone.page, "iPhone");
-  await expect.poll(() => sockets.length).toBe(1);
+  await opened;
+  expect(sockets).toHaveLength(1);
   await phone.page.evaluate(() => {
     new MutationObserver(() => {
       if (document.body.innerText.includes("[common_offline]")) {
