@@ -185,7 +185,6 @@ function Progress({
         fraction={compose.progress}
         total={compose.bytes}
         failed={failed}
-        inset={inset}
       />
       <span className="gd-drop__route label text-ink-muted">
         <span>{deviceName}</span>

@@ -32,11 +32,3 @@
     font-family: var(--font-sans);
   }
 }
-
-dialog.gd-dialog {
-  margin: auto;
-  max-width: calc(100% - 2 * var(--space-6));
-}
-dialog.gd-dialog::backdrop {
-  background: color-mix(in srgb, var(--surface-sunken) 72%, transparent);
-}

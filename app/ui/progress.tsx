@@ -5,13 +5,11 @@ export function TransferProgress({
   fraction,
   total,
   failed,
-  inset = false,
 }: {
   label: string;
   fraction: number;
   total: number;
   failed: boolean;
-  inset?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -20,7 +18,7 @@ export function TransferProgress({
         <span className="mono text-ink-muted">{formatSizeOf(fraction * total, total)}</span>
       </div>
       <progress
-        className={`gd-progress ${failed ? "gd-progress--stopped" : ""} ${inset ? "bg-surface" : ""}`}
+        className={`gd-progress ${failed ? "gd-progress--stopped" : ""}`}
         aria-label={label}
         max={1}
         value={fraction}

@@ -62,7 +62,7 @@ function ClipboardEntry({ entry, surface }: { entry: readonly Item[]; surface: s
           <img
             ref={showImage}
             alt={m.drop_image_preview()}
-            className="block max-h-60 w-full rounded-sm bg-surface-sunken object-contain"
+            className="block max-h-60 w-full rounded-sm bg-ink/10 object-contain"
           />
         )}
         {preview !== null && <p className="body m-0 line-clamp-3 wrap-break-word">{preview}</p>}

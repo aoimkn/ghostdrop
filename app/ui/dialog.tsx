@@ -34,7 +34,7 @@ export function Dialog({
   return (
     <dialog
       ref={ref}
-      className="gd-dialog"
+      className="gd-dialog m-auto"
       role={danger ? "alertdialog" : "dialog"}
       aria-labelledby={titleId}
       aria-describedby={body === undefined ? undefined : bodyId}
