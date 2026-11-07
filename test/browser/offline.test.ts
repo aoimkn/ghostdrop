@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type WebSocketRoute } from "@playwright/test";
 
 import { open, PHONE, signUp, untilServiceWorkerControls } from "./helpers";
 
@@ -20,7 +20,7 @@ test("home survives a reload, says when it is offline, and shows the error scree
   await phone.page.context().setOffline(true);
   await expect(phone.page.getByText("[common_offline]")).toBeVisible();
   await phone.page.context().setOffline(false);
-  await expect(phone.page.getByText("[common_offline]")).toBeHidden({ timeout: 15_000 });
+  await expect(phone.page.getByText("[common_offline]")).toBeHidden();
 
   await phone.page.reload();
   await expect(phone.page.getByText("[drop_pending_title]")).toBeVisible();
@@ -28,6 +28,31 @@ test("home survives a reload, says when it is offline, and shows the error scree
   await phone.page.route("**/api/session", (route) => route.abort());
   await phone.page.reload();
   await expect(phone.page.getByText("[error_unknown_title]")).toBeVisible();
+});
+
+test("home does not say it is offline when a lost connection comes straight back", async ({
+  browser,
+}) => {
+  const phone = await open(browser, PHONE);
+  const sockets: WebSocketRoute[] = [];
+  await phone.page.routeWebSocket(/\/api\/events$/, (socket) => {
+    socket.connectToServer();
+    sockets.push(socket);
+  });
+  await signUp(phone.page, "iPhone");
+  await expect.poll(() => sockets.length).toBe(1);
+  await phone.page.evaluate(() => {
+    new MutationObserver(() => {
+      if (document.body.innerText.includes("[common_offline]")) {
+        document.documentElement.dataset.sawOffline = "";
+      }
+    }).observe(document.body, { subtree: true, childList: true, characterData: true });
+  });
+
+  await sockets[0]?.close();
+  await expect.poll(() => sockets.length).toBe(2);
+  await expect(phone.page.getByText("[drop_pending_title]")).toBeVisible();
+  await expect(phone.page.locator("html")).not.toHaveAttribute("data-saw-offline");
 });
 
 test("once opened, the app shows its own error screen when offline", async ({ browser }) => {

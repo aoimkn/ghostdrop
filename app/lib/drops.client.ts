@@ -167,26 +167,50 @@ export function watchDrops(
   let delay = 1000;
   let stopped = false;
   const connect = () => {
+    clearTimeout(retry);
     const url = new URL("/api/events", window.location.href);
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-    socket = new WebSocket(url);
-    socket.addEventListener("open", () => {
+    const current = new WebSocket(url);
+    socket = current;
+    let opened = false;
+    current.addEventListener("open", () => {
+      opened = true;
       delay = 1000;
       onConnection(true);
       onChange();
     });
-    socket.addEventListener("message", () => onChange());
-    socket.addEventListener("close", () => {
-      if (stopped) return;
+    current.addEventListener("message", () => onChange());
+    current.addEventListener("close", () => {
+      if (stopped || socket !== current) return;
+      socket = null;
+      // Suspended apps lose their socket while the network is fine, so only a failed attempt means offline.
+      if (opened) {
+        if (!document.hidden) connect();
+        return;
+      }
       onConnection(false);
+      if (document.hidden) return;
       retry = setTimeout(connect, delay);
       delay = Math.min(delay * 2, 30_000);
     });
   };
+  const reconnectNow = () => {
+    if (document.hidden || socket !== null) return;
+    delay = 1000;
+    connect();
+  };
+  const onVisibility = () => {
+    if (document.hidden) clearTimeout(retry);
+    else reconnectNow();
+  };
+  document.addEventListener("visibilitychange", onVisibility);
+  window.addEventListener("online", reconnectNow);
   connect();
   return () => {
     stopped = true;
     clearTimeout(retry);
+    document.removeEventListener("visibilitychange", onVisibility);
+    window.removeEventListener("online", reconnectNow);
     socket?.close();
   };
 }
