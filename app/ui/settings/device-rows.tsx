@@ -36,13 +36,15 @@ export function DeviceRows({
         >
           {m.device_rename()}
         </button>
-        <button
-          type="button"
-          className="gd-button gd-button--subtle gd-button--destructive label min-h-11"
-          onClick={() => onRemove(device)}
-        >
-          {m.device_remove()}
-        </button>
+        {!device.current && (
+          <button
+            type="button"
+            className="gd-button gd-button--subtle gd-button--destructive label min-h-11"
+            onClick={() => onRemove(device)}
+          >
+            {m.device_remove()}
+          </button>
+        )}
       </div>
     </div>
   ));

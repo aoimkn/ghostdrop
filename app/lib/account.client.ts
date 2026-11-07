@@ -129,9 +129,7 @@ export async function renameDevice(id: string, name: string): Promise<void> {
 }
 
 export async function removeDevice(id: string): Promise<void> {
-  const current = (await listDevices()).find((candidate) => candidate.current);
   await call("DELETE", `/api/devices/${encodeURIComponent(id)}`);
-  if (current?.id === id) await clearKey();
 }
 
 export async function listPasskeys(): Promise<Passkey[]> {

@@ -228,12 +228,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
               danger
               busy={busy}
               onCancel={() => setOpen(null)}
-              onConfirm={() =>
-                void run(
-                  () => removeDevice(open.device.id),
-                  open.device.current ? toSignIn : undefined,
-                )
-              }
+              onConfirm={() => void run(() => removeDevice(open.device.id))}
             />
           )}
           {open?.kind === "remove-passkey" && (
