@@ -172,6 +172,10 @@ export function watchDrops(
   let retry: ReturnType<typeof setTimeout> | undefined;
   let delay = 1000;
   let stopped = false;
+  let frozen = false;
+  // Only attempts made while the page is active say whether the server is reachable: a frozen
+  // page becomes visible before it resumes, and sockets opened in between fail at once.
+  const active = () => !document.hidden && !frozen;
   const connect = () => {
     clearTimeout(retry);
     const url = new URL("/api/events", window.location.href);
@@ -189,19 +193,19 @@ export function watchDrops(
     current.addEventListener("close", () => {
       if (stopped || socket !== current) return;
       socket = null;
+      if (!active()) return;
       // Suspended apps lose their socket while the network is fine, so only a failed attempt means offline.
       if (opened) {
-        if (!document.hidden) connect();
+        connect();
         return;
       }
       onConnection(false);
-      if (document.hidden) return;
       retry = setTimeout(connect, delay);
       delay = Math.min(delay * 2, 30_000);
     });
   };
   const reconnectNow = () => {
-    if (document.hidden || socket !== null) return;
+    if (!active() || socket !== null) return;
     delay = 1000;
     connect();
   };
@@ -209,13 +213,25 @@ export function watchDrops(
     if (document.hidden) clearTimeout(retry);
     else reconnectNow();
   };
+  const onFreeze = () => {
+    frozen = true;
+    clearTimeout(retry);
+  };
+  const onResume = () => {
+    frozen = false;
+    reconnectNow();
+  };
   document.addEventListener("visibilitychange", onVisibility);
+  document.addEventListener("freeze", onFreeze);
+  document.addEventListener("resume", onResume);
   window.addEventListener("online", reconnectNow);
   connect();
   return () => {
     stopped = true;
     clearTimeout(retry);
     document.removeEventListener("visibilitychange", onVisibility);
+    document.removeEventListener("freeze", onFreeze);
+    document.removeEventListener("resume", onResume);
     window.removeEventListener("online", reconnectNow);
     socket?.close();
   };
