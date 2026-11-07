@@ -68,6 +68,7 @@
   "drop_expires_in": "Expires in {time}",
   "drop_files_title": "Files",
   "drop_folder_not_supported": "Folders can’t be sent. Add the files inside instead.",
+  "drop_image_preview": "Received image",
   "drop_item_count": [
     {
       "declarations": ["input count", "local countPlural = count: plural"],

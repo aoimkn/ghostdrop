@@ -53,6 +53,7 @@
   "drop_expires_in": "あと {time}で消えます",
   "drop_files_title": "ファイル",
   "drop_folder_not_supported": "フォルダは送れません。中のファイルを追加してください。",
+  "drop_image_preview": "受け取った画像",
   "drop_item_count": "{count}件",
   "drop_new": "新着",
   "drop_paste": "貼り付け",

@@ -26,10 +26,17 @@ const COPIED_MS = 2000;
 function ClipboardEntry({ entry, surface }: { entry: readonly Item[]; surface: string }) {
   const [preview, setPreview] = useState<string | null>(null);
   const [copy, setCopy] = useState<"idle" | "copied" | "failed">("idle");
-  const text = entry.find((item) => item.type.startsWith("text/plain"));
+  const image = entry.find((item) => item.type.startsWith("image/png"));
+  const text = image ? undefined : entry.find((item) => item.type.startsWith("text/plain"));
   useEffect(() => {
     if (text) void text.content.text().then(setPreview);
   }, [text]);
+  const showImage = (element: HTMLImageElement | null) => {
+    if (!element || !image) return undefined;
+    const url = URL.createObjectURL(image.content);
+    element.src = url;
+    return () => URL.revokeObjectURL(url);
+  };
   useEffect(() => {
     const timer = copy === "copied" ? setTimeout(() => setCopy("idle"), COPIED_MS) : undefined;
     return () => clearTimeout(timer);
@@ -51,6 +58,13 @@ function ClipboardEntry({ entry, surface }: { entry: readonly Item[]; surface: s
         <div className="mono text-ink-muted">
           {entry.map((item) => item.type).join(", ")} &middot; {formatSize(totalSize(entry))}
         </div>
+        {image && (
+          <img
+            ref={showImage}
+            alt={m.drop_image_preview()}
+            className="block max-h-60 w-full rounded-sm bg-surface-sunken object-contain"
+          />
+        )}
         {preview !== null && <p className="body m-0 line-clamp-3 wrap-break-word">{preview}</p>}
         <button
           type="button"
